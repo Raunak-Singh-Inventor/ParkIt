@@ -9,6 +9,10 @@ struct InputMessage {
     char *type; // type of value (GSR, Heartrate, etc.)
 } inputMessage;
 
+// mutex to control whether input message can be changed
+// needed to stop multiple tasks from overwriting the inputMessage at the same time
+static SemaphoreHandle_t changeInputMessageMutex;
+
 // get the GSR input from Port B and send it into the gsr queue
 void getGsrInput(void *parameter) {
     printf("initialized readGSRInput task\n"); // signals that getGsrInput is initialized
@@ -21,17 +25,24 @@ void getGsrInput(void *parameter) {
             gsr_value+=Core2ForAWS_Port_B_ADC_ReadRaw();
         }
         gsr_value /= 10;
-        /**********************************************************/
-        inputMessage.value = gsr_value; // Sets inputMessage.value to the value inputted by the sensor
-        inputMessage.type = "gsr"; // Sets the type of value to "gsr"
-        /*******************************************************************************/
-        /* send inputMessage struct to queue and output if the send succeded or failed */
-        if(xQueueSend(input_queue,&inputMessage,10)==pdTRUE) {
-            printf("(readGsrInput) succesfully sent value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+        /*---CRITICAL SECTION---*/
+        if(xSemaphoreTake(changeInputMessageMutex, 10) == pdTRUE) { // see if task can take the changeInputMessageMutex
+            /**********************************************************/
+            inputMessage.value = gsr_value; // Sets inputMessage.value to the value inputted by the sensor
+            inputMessage.type = "gsr"; // Sets the type of value to "gsr"
+            /*******************************************************************************/
+            /* send inputMessage struct to queue and output if the send succeded or failed */
+            if(xQueueSend(input_queue,&inputMessage,10)==pdTRUE) {
+                printf("(readGsrInput) succesfully sent value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+            } else {
+                printf("(readGsrInput) failed to send value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+            }
+            /*******************************************************************************/
+            xSemaphoreGive(changeInputMessageMutex); // release the mutex at the end of critical section
         } else {
-            printf("(readGsrInput) failed to send value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+            printf("Wasn't able to take changeInputMessageMutex");
         }
-        /*******************************************************************************/
+        /*---CRITICAL SECTION---*/
         vTaskDelay(pdMS_TO_TICKS(1000)); // to make the output in the monitor more readable
     }
 }
@@ -75,6 +86,8 @@ void app_main(void){
     if(input_queue==NULL) {
         printf("There was an error in creating the input queue");
     }
+
+    changeInputMessageMutex = xSemaphoreCreateMutex(); // initialize the mutex
 
     /****************/
     /* Create Tasks */
