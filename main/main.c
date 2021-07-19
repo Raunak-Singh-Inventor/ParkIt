@@ -15,7 +15,7 @@ static SemaphoreHandle_t changeInputMessageMutex;
 
 // get the GSR input from Port B and send it into the gsr queue
 void getGsrInput(void *parameter) {
-    printf("initialized readGSRInput task\n"); // signals that getGsrInput is initialized
+    printf("initialized getGSRInput task\n"); // signals that getGsrInput is initialized
     while(true) {
         Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC); // Sets Port B (ADC) as the pinmode
         /**********************************************************/
