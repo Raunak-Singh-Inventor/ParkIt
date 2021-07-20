@@ -33,14 +33,14 @@ void getGsrInput(void *parameter) {
             /*******************************************************************************/
             /* send inputMessage struct to queue and output if the send succeded or failed */
             if(xQueueSend(input_queue,&inputMessage,10)==pdTRUE) {
-                printf("(readGsrInput) succesfully sent value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+                printf("(getGsrInput) succesfully sent value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
             } else {
-                printf("(readGsrInput) failed to send value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+                printf("(getGsrInput) failed to send value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
             }
             /*******************************************************************************/
             xSemaphoreGive(changeInputMessageMutex); // release the mutex at the end of critical section
         } else {
-            printf("Wasn't able to take changeInputMessageMutex");
+            printf("(getGsrInput) Wasn't able to take changeInputMessageMutex");
         }
         /*---CRITICAL SECTION---*/
         vTaskDelay(pdMS_TO_TICKS(1000)); // to make the output in the monitor more readable
@@ -84,7 +84,7 @@ void app_main(void){
 
     // check that input queue was created succesfully
     if(input_queue==NULL) {
-        printf("There was an error in creating the input queue");
+        printf("(app_main) There was an error in creating the input queue");
     }
 
     changeInputMessageMutex = xSemaphoreCreateMutex(); // initialize the mutex
