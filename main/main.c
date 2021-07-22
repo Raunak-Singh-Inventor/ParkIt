@@ -6,6 +6,7 @@ static int INPUT_QUEUE_LEN = 10; // length of input queue
 // strut which is sent to the queue in getGsrInput func
 struct InputMessage {
     int value; // value retrieved from sensor
+    float accel[3]; // special array if type is accel
     char *type; // type of value (GSR, Heartrate, etc.)
 } inputMessage;
 
@@ -43,7 +44,39 @@ void getGsrInput(void *parameter) {
             printf("(getGsrInput) Wasn't able to take changeInputMessageMutex");
         }
         /*---CRITICAL SECTION---*/
-        vTaskDelay(pdMS_TO_TICKS(1000)); // to make the output in the monitor more readable
+        vTaskDelay(pdMS_TO_TICKS(700)); // to make the output in the monitor more readable
+    }
+}
+
+// get the data from the 6-axis IMU
+void getAccelData(void* parameter){
+    float accel[3]; // array of accel in format x,y,z
+ 
+    printf("intialized getAccelData task\n");
+    while(true){
+        MPU6886_GetAccelData(&accel[0], &accel[1], &accel[2]); // get accel data
+        /*---CRITICAL SECTION---*/
+        if(xSemaphoreTake(changeInputMessageMutex, 20) == pdTRUE) { // see if task can take the changeInputMessageMutex
+            /**********************************************************/
+            inputMessage.value = 0; // set value to 0 or false
+            inputMessage.accel[0] = accel[0];
+            inputMessage.accel[1] = accel[1];
+            inputMessage.accel[2] = accel[2]; // Sets inputMessage.accel to the accel gotten from sensor
+            inputMessage.type = "accel"; // Sets the type of value to "accel"
+            /*******************************************************************************/
+            /* send inputMessage struct to queue and output if the send succeded or failed */
+            if(xQueueSend(input_queue,&inputMessage,10)==pdTRUE) {
+                printf("(getAccelData) succesfully sent value and type to input queue\n");
+            } else {
+                printf("(getAccelData) failed to send value and type to input queue\n");
+            }
+            /*******************************************************************************/
+            xSemaphoreGive(changeInputMessageMutex); // release the mutex at the end of critical section
+        } else {
+            printf("(getAccelData) Wasn't able to take changeInputMessageMutex");
+        }
+        /*---CRITICAL SECTION---*/
+        vTaskDelay(pdMS_TO_TICKS(500)); // to make the output in monitor more readable
     }
 }
 
@@ -61,14 +94,22 @@ void plotInput(void *parameter) {
             */
             if(xQueueReceive(input_queue,&rMessage,5)==pdTRUE) {
                 // SUCCESS
-                printf("(plotInput) succesfully recieved value of %d and type of %s from input queue\n",rMessage.value,rMessage.type);
+                char *accel="accel";
+                if(rMessage.type!=accel) {
+                    printf("(plotInput) succesfully recieved value of %d and type of %s from input queue\n",rMessage.value,rMessage.type);
+                } else {
+                    printf("(plotInput) array of floats was recieved, type is accel: ");
+                    for(int i = 0; i<3; i++) {
+                        printf("%f ",rMessage.accel[i]);
+                    }
+                    printf("\n");
+                }
             } else {
                 // FAILURE
-                printf("(plotInput) failed to recieve value and type from input queue\n");
+                // printf("(plotInput) failed to recieve value and type from input queue\n");
             }
             /************************************/
         }
-        vTaskDelay(pdMS_TO_TICKS(1000)); // to make recieve (plotInput) synchronize with send
     }
 }
 
@@ -94,7 +135,17 @@ void app_main(void){
 
     xTaskCreatePinnedToCore(
         getGsrInput,
-        "read gsr input",
+        "get gsr input",
+        2000,
+        NULL,
+        1,
+        NULL,
+        0
+    );
+
+    xTaskCreatePinnedToCore(
+        getAccelData,
+        "get accel data",
         2000,
         NULL,
         1,
