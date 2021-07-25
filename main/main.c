@@ -3,7 +3,7 @@
 static QueueHandle_t input_queue = NULL; // queue to store input from sensors
 static int INPUT_QUEUE_LEN = 10; // length of input queue
 
-// strut which is sent to the queue in getGsrInput func
+// struct which is sent to the queue in getGsrInput func
 struct InputMessage {
     int value; // value retrieved from sensor
     float accel[3]; // special array if type is accel
@@ -123,7 +123,28 @@ static void getMicData(void *parameter){
 
 // plot input recieved from input queue on line graph on display  
 void plotInput(void *parameter) {
+    /***************************************************/
+    /* Create Main Text Box on screen */
+    lv_obj_t * page = lv_page_create(lv_scr_act(), NULL);
+    lv_obj_set_size(page, 300, 200);
+    lv_obj_align(page, NULL, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t * label = lv_label_create(page, NULL);
+    lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);       
+    lv_obj_set_width(label, lv_page_get_width_fit(page));   
+    /***************************************************/       
+
     struct InputMessage rMessage; // struct of type InputMessage to store the recieved message
+
+    /***********************************************/
+    /* intialize default values for data variables */
+    int gsr_value = 0;
+    float accel_value[3] = {0.0f,0.0f,0.0f};
+    int mic_value = 0;
+    /***********************************************/
+
+    char text[100]; // variable to hold text to be displayed on screen
+
     printf("initialized plotInput task\n"); // signals that plotInput is initialized
     while(true) {
         if(input_queue!=NULL) { // if input queue has some messages in it
@@ -138,10 +159,17 @@ void plotInput(void *parameter) {
                 char *accel="accel";
                 if(rMessage.type!=accel) {
                     printf("(plotInput) succesfully recieved value of %d and type of %s from input queue\n",rMessage.value,rMessage.type);
+                    char *gsr="gsr";
+                    if(rMessage.type==gsr) {
+                        gsr_value = rMessage.value;
+                    } else {
+                        mic_value = rMessage.value;
+                    }
                 } else {
                     printf("(plotInput) array of floats was recieved, type is accel: ");
                     for(int i = 0; i<3; i++) {
                         printf("%f ",rMessage.accel[i]);
+                        accel_value[i] = rMessage.accel[i];
                     }
                     printf("\n");
                 }
@@ -151,6 +179,12 @@ void plotInput(void *parameter) {
             }
             /************************************/
         }
+        
+        // format text string to include the values
+        sprintf(text,"Park It!\nGSR: %d\nMic: %d\nAccel: %.2f %.2f %.2f",gsr_value,mic_value,accel_value[0],accel_value[1],accel_value[2]);
+        printf("(plotInput) %s\n",text);
+
+        lv_label_set_text(label, text);
     }
 }
 
@@ -177,7 +211,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(
         getGsrInput,
         "get gsr input",
-        6000,
+        4096*2,
         NULL,
         1,
         NULL,
@@ -187,7 +221,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(
         getAccelData,
         "get accel data",
-        6000,
+        4096*2,
         NULL,
         1,
         NULL,
@@ -207,7 +241,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(
         plotInput,
         "plot input",
-        6000,
+        4096*2,
         NULL,
         1,
         NULL,
