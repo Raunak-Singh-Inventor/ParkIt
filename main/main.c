@@ -188,7 +188,7 @@ void plotInput(void *parameter) {
         sprintf(text,"Park It!\nGSR: %d\nMic: %d\nAccel: %.2f %.2f %.2f",gsr_value,mic_value,accel_value[0],accel_value[1],accel_value[2]);
         printf("(plotInput):\n%s\n",text);
 
-        lv_label_set_text(label, text);
+        lv_label_set_text(label, text); // set text on lvgl page label
     }
 }
 
