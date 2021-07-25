@@ -131,7 +131,7 @@ void plotInput(void *parameter) {
 
     lv_obj_t * label = lv_label_create(page, NULL);
     lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);       
-    lv_obj_set_width(label, lv_page_get_width_fit(page));   
+    lv_obj_set_width(label, lv_page_get_width_fit(page));  
     /***************************************************/       
 
     struct InputMessage rMessage; // struct of type InputMessage to store the recieved message
@@ -169,7 +169,11 @@ void plotInput(void *parameter) {
                     printf("(plotInput) array of floats was recieved, type is accel: ");
                     for(int i = 0; i<3; i++) {
                         printf("%f ",rMessage.accel[i]);
-                        accel_value[i] = rMessage.accel[i];
+                    }
+                    if(accel_value[0]!=-57897880075350303304673394688.00) { // to eliminate spam input
+                        for(int i = 0; i<3; i++) {
+                            accel_value[i] = rMessage.accel[i];
+                        }
                     }
                     printf("\n");
                 }
@@ -182,7 +186,7 @@ void plotInput(void *parameter) {
         
         // format text string to include the values
         sprintf(text,"Park It!\nGSR: %d\nMic: %d\nAccel: %.2f %.2f %.2f",gsr_value,mic_value,accel_value[0],accel_value[1],accel_value[2]);
-        printf("(plotInput) %s\n",text);
+        printf("(plotInput):\n%s\n",text);
 
         lv_label_set_text(label, text);
     }
