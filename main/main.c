@@ -44,7 +44,7 @@ void getGsrInput(void *parameter) {
             printf("(getGsrInput) Wasn't able to take changeInputMessageMutex");
         }
         /*---CRITICAL SECTION---*/
-        vTaskDelay(pdMS_TO_TICKS(700)); // to make the output in the monitor more readable
+        vTaskDelay(pdMS_TO_TICKS(500)); // to make the output in the monitor more readable
     }
 }
 
@@ -99,8 +99,25 @@ static void getMicData(void *parameter){
             noise_sum += i2s_readraw_buf[i];
         }
         int noise_value = noise_sum/1024;
-        printf("(getMicData) noise_value: %d\n",noise_value);
-        vTaskDelay(pdMS_TO_TICKS(300));
+        /*---CRITICAL SECTION---*/
+        if(xSemaphoreTake(changeInputMessageMutex, 30) == pdTRUE) { // see if task can take the changeInputMessageMutex
+            /**********************************************************/
+            inputMessage.value = noise_value; // Sets inputMessage.value to the value inputted by the sensor
+            inputMessage.type = "mic"; // Sets the type of value to "mic"
+            /*******************************************************************************/
+            /* send inputMessage struct to queue and output if the send succeded or failed */
+            if(xQueueSend(input_queue,&inputMessage,10)==pdTRUE) {
+                printf("(getMicData) succesfully sent value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+            } else {
+                printf("(getMicData) failed to send value of %d and type of %s to input queue\n",inputMessage.value,inputMessage.type);
+            }
+            /*******************************************************************************/
+            xSemaphoreGive(changeInputMessageMutex); // release the mutex at the end of critical section
+        } else {
+            printf("(getMicData) Wasn't able to take changeInputMessageMutex");
+        }
+        /*---CRITICAL SECTION---*/
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
