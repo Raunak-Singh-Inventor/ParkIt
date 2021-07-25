@@ -82,24 +82,26 @@ void getAccelData(void* parameter){
 
 // get the data from the microphone and push it to input queue
 static void getMicData(void *parameter){
-    /* If the speaker was initialized, be sure to call Speaker_Deinit() and 
-        disable first. */
-    Microphone_Init();
- 
-    static int8_t i2s_readraw_buf[1024];
-    size_t bytes_read;
- 
-    i2s_read(MIC_I2S_NUMBER, (char*)i2s_readraw_buf, 1024, &bytes_read, pdMS_TO_TICKS(100));
-    Microphone_Deinit();
- 
-    printf("Read %u bytes from microphone\n", bytes_read);
-    int noise_sum = 0;
-    for(uint16_t i = 0; i < 1024; i++){
-        noise_sum += i2s_readraw_buf[i];
+    printf("intialized getMicData task\n");
+    while(true) {
+        /* If the speaker was initialized, be sure to call Speaker_Deinit() and 
+            disable first. */
+        Microphone_Init();
+    
+        static int8_t i2s_readraw_buf[1024];
+        size_t bytes_read;
+    
+        i2s_read(MIC_I2S_NUMBER, (char*)i2s_readraw_buf, 1024, &bytes_read, pdMS_TO_TICKS(100));
+        Microphone_Deinit();
+    
+        int noise_sum = 0;
+        for(uint16_t i = 0; i < 1024; i++){
+            noise_sum += i2s_readraw_buf[i];
+        }
+        int noise_value = noise_sum/1024;
+        printf("(getMicData) noise_value: %d\n",noise_value);
+        vTaskDelay(pdMS_TO_TICKS(300));
     }
-    int noise_value = noise_sum/1024;
-    printf("(getMicData) noise_value: %d\n",noise_value);
-    vTaskDelete(NULL);
 }
 
 // plot input recieved from input queue on line graph on display  
@@ -158,7 +160,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(
         getGsrInput,
         "get gsr input",
-        2000,
+        6000,
         NULL,
         1,
         NULL,
@@ -168,7 +170,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(
         getAccelData,
         "get accel data",
-        2000,
+        6000,
         NULL,
         1,
         NULL,
@@ -188,7 +190,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(
         plotInput,
         "plot input",
-        2000,
+        6000,
         NULL,
         1,
         NULL,
