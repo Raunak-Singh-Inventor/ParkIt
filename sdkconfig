@@ -124,6 +124,13 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# AWS IoT EduKit Configuration
+#
+CONFIG_WIFI_SSID="Fios-JNRON"
+CONFIG_WIFI_PASSWORD="visas2249old884tag"
+# end of AWS IoT EduKit Configuration
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y
@@ -1538,7 +1545,7 @@ CONFIG_LV_USE_WIN=y
 #
 # Amazon Web Services IoT Platform
 #
-CONFIG_AWS_IOT_MQTT_HOST=""
+CONFIG_AWS_IOT_MQTT_HOST="a3h6kd2c90oa56-ats.iot.us-west-2.amazonaws.com"
 CONFIG_AWS_IOT_MQTT_PORT=8883
 CONFIG_AWS_IOT_MQTT_TX_BUF_LEN=512
 CONFIG_AWS_IOT_MQTT_RX_BUF_LEN=512

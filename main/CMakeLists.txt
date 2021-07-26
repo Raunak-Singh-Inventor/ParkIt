@@ -1,6 +1,6 @@
-# This file was automatically generated for projects
-# without default 'CMakeLists.txt' file.
+set(COMPONENT_SRCS "main.c" "wifi.c")
+set(COMPONENT_ADD_INCLUDEDIRS "." "./includes")
+set(COMPONENT_REQUIRES "nvs_flash" "esp-aws-iot" "esp-cryptoauthlib" "core2forAWS")
+register_component()
 
-FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/main/*.*)
-
-idf_component_register(SRCS ${app_sources})
+target_add_binary_data(${COMPONENT_TARGET} "certs/aws-root-ca.pem" TEXT)
