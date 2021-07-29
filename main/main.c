@@ -5,6 +5,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include <time.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -68,6 +70,8 @@ char HostAddress[255] = AWS_IOT_MQTT_HOST;
 /* Default MQTT port is pulled from the aws_iot_config.h */
 uint32_t port = AWS_IOT_MQTT_PORT;
 
+char *client_id;
+
 void disconnect_callback_handler(AWS_IoT_Client *pClient, void *data)
 {
     ESP_LOGW(TAG, "MQTT Disconnect");
@@ -100,30 +104,14 @@ void disconnect_callback_handler(AWS_IoT_Client *pClient, void *data)
 
 static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_topic_len)
 {
-    char cPayload[100];
-    int32_t i = 0;
-
-    IoT_Publish_Message_Params paramsQOS0;
+    char cPayload[200];
     IoT_Publish_Message_Params paramsQOS1;
-
-    paramsQOS0.qos = QOS0;
-    paramsQOS0.payload = (void *)cPayload;
-    paramsQOS0.isRetained = 0;
-
-    // // Publish and ignore if "ack" was received or  from AWS IoT Core
-    // sprintf(cPayload, "%s : %d ", "Hello from AWS IoT EduKit (QOS0)", i++);
-    // paramsQOS0.payloadLen = strlen(cPayload);
-    // IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS0);
-    // if (rc != SUCCESS){
-    //     ESP_LOGE(TAG, "Publish QOS0 error %i", rc);
-    //     rc = SUCCESS;
-    // }
 
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *)cPayload;
     paramsQOS1.isRetained = 0;
     // Publish and check if "ack" was sent from AWS IoT Core
-    sprintf(cPayload, "{ %s : %d, %s : %d, %s : %f, %s : %f, %s : %f }",(char *) "\"gsr\"", gsr_value,(char *) "\"mic\"", mic_value,(char *) "\"accel[0]\"", accel_value[0],(char *) "\"accel[1]\"", accel_value[1],(char *) "\"accel[2]\"", accel_value[2]);
+    sprintf(cPayload, "{ \"gsr\" : %d, \"mic\" : %d, \"accelZero\" : %f, \"accelOne\" : %f, \"accelTwo\" : %f, \"client_id\" : \"%s\" }",gsr_value,mic_value,accel_value[0],accel_value[1],accel_value[2],client_id);
     paramsQOS1.payloadLen = strlen(cPayload);
     IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
     if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -150,11 +138,11 @@ void mqtt_send_task(void *param)
     mqttInitParams.pDeviceCertLocation = "#";
     mqttInitParams.pDevicePrivateKeyLocation = "#0";
 
-#define CLIENT_ID_LEN (ATCA_SERIAL_NUM_SIZE * 2)
-#define SUBSCRIBE_TOPIC_LEN (CLIENT_ID_LEN + 3)
-#define BASE_PUBLISH_TOPIC_LEN (CLIENT_ID_LEN + 2)
+    #define CLIENT_ID_LEN (ATCA_SERIAL_NUM_SIZE * 2)
+    #define SUBSCRIBE_TOPIC_LEN (CLIENT_ID_LEN + 3)
+    #define BASE_PUBLISH_TOPIC_LEN (CLIENT_ID_LEN + 2)
 
-    char *client_id = malloc(CLIENT_ID_LEN + 1);
+    client_id = malloc(CLIENT_ID_LEN + 1);
     ATCA_STATUS ret = Atecc608_GetSerialString(client_id);
     if (ret != ATCA_SUCCESS)
     {
