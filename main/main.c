@@ -205,7 +205,7 @@ void mqtt_send_task(void *param)
     ESP_LOGI(TAG, "\n****************************************\n*  AWS client Id - %s  *\n****************************************\n\n",
              client_id);
 
-    printf("Attempting publish to: %s\n", base_publish_topic);
+    // printf("Attempting publish to: %s\n", base_publish_topic);
     while ((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
     {
 
@@ -220,7 +220,7 @@ void mqtt_send_task(void *param)
         ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         vTaskDelay(pdMS_TO_TICKS(PUBLISH_INTERVAL_MS));
 
-        publisher(&client, base_publish_topic, BASE_PUBLISH_TOPIC_LEN);
+        // publisher(&client, base_publish_topic, BASE_PUBLISH_TOPIC_LEN);
         vTaskResume(getAccelDataHandle);
         vTaskResume(getMicDataHandle);
     }
@@ -429,20 +429,31 @@ static void getMicData(void *parameter)
 // plot input recieved from input queue on line graph on display
 void plotInput(void *parameter)
 {
-    /***************************************************/
-    /* Create Main Text Box on screen */
-    lv_obj_t *page = lv_page_create(lv_scr_act(), NULL);
-    lv_obj_set_size(page, 300, 200);
-    lv_obj_align(page, NULL, LV_ALIGN_CENTER, 0, 0);
+    static lv_style_t style_halo;
+    lv_style_init(&style_halo);
+    lv_style_set_transition_time(&style_halo, LV_STATE_PRESSED, 400);
+    lv_style_set_transition_time(&style_halo, LV_STATE_DEFAULT, 0);
+    lv_style_set_transition_delay(&style_halo, LV_STATE_DEFAULT, 200);
+    lv_style_set_outline_width(&style_halo, LV_STATE_DEFAULT, 0);
+    lv_style_set_outline_width(&style_halo, LV_STATE_PRESSED, 20);
+    lv_style_set_outline_opa(&style_halo, LV_STATE_DEFAULT, LV_OPA_COVER);
+    lv_style_set_outline_opa(&style_halo, LV_STATE_FOCUSED, LV_OPA_COVER);  
+    lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
+    lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
+    lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
 
-    lv_obj_t *label = lv_label_create(page, NULL);
-    lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);
-    lv_obj_set_width(label, lv_page_get_width_fit(page));
-    /***************************************************/
+    lv_obj_t * btn2 = lv_btn_create(lv_scr_act(), NULL);
+    lv_obj_align(btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
+    lv_obj_add_style(btn2, LV_BTN_PART_MAIN, &style_halo);
+    lv_obj_set_style_local_value_str(btn2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
+
+    static const char * btnm_map[] = {"GSR", "Mic", "Accel",""};
+
+    lv_obj_t * btnm1 = lv_btnmatrix_create(lv_scr_act(), NULL);
+    lv_btnmatrix_set_map(btnm1, btnm_map);
+    lv_obj_align(btnm1, NULL, LV_ALIGN_CENTER, 5, 10);
 
     struct InputMessage rMessage; // struct of type InputMessage to store the recieved message
-
-    char text[100]; // variable to hold text to be displayed on screen
 
     printf("initialized plotInput task\n"); // signals that plotInput is initialized
     while (true)
@@ -496,11 +507,5 @@ void plotInput(void *parameter)
             }
             /************************************/
         }
-
-        // format text string to include the values
-        sprintf(text, "Park It!\nGSR: %d\nMic: %d\nAccel: %.2f %.2f %.2f", gsr_value, mic_value, accel_value[0], accel_value[1], accel_value[2]);
-        // printf("(plotInput):\n%s\n",text);
-
-        lv_label_set_text(label, text); // set text on lvgl page label
     }
 }
