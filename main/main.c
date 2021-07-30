@@ -429,6 +429,8 @@ static void getMicData(void *parameter)
 // plot input recieved from input queue on line graph on display
 void plotInput(void *parameter)
 {
+    /***************/
+    /* Halo Effect */
     static lv_style_t style_halo;
     lv_style_init(&style_halo);
     lv_style_set_transition_time(&style_halo, LV_STATE_PRESSED, 400);
@@ -441,17 +443,24 @@ void plotInput(void *parameter)
     lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
     lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
     lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
+    /***************/
 
-    lv_obj_t * btn2 = lv_btn_create(lv_scr_act(), NULL);
-    lv_obj_align(btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
-    lv_obj_add_style(btn2, LV_BTN_PART_MAIN, &style_halo);
-    lv_obj_set_style_local_value_str(btn2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
+    /***************/
+    /* Home Button */
+    lv_obj_t * home_btn = lv_btn_create(lv_scr_act(), NULL);
+    lv_obj_align(home_btn, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
+    lv_obj_add_style(home_btn, LV_BTN_PART_MAIN, &style_halo);
+    lv_obj_set_style_local_value_str(home_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
+    /***************/
 
-    static const char * btnm_map[] = {"GSR", "Mic", "Accel",""};
+    /*************************************/
+    /* Sensor Button Matrix on Home Page */
+    static const char * sensor_btnm_map[] = {"GSR", "Mic", "Accel",""};
 
-    lv_obj_t * btnm1 = lv_btnmatrix_create(lv_scr_act(), NULL);
-    lv_btnmatrix_set_map(btnm1, btnm_map);
-    lv_obj_align(btnm1, NULL, LV_ALIGN_CENTER, 5, 10);
+    lv_obj_t * sensor_btnm = lv_btnmatrix_create(lv_scr_act(), NULL);
+    lv_btnmatrix_set_map(sensor_btnm, sensor_btnm_map);
+    lv_obj_align(sensor_btnm, NULL, LV_ALIGN_CENTER, 5, 10);
+    /*************************************/
 
     struct InputMessage rMessage; // struct of type InputMessage to store the recieved message
 
