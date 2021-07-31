@@ -430,6 +430,7 @@ static void getMicData(void *parameter)
 }
 
 lv_obj_t * sensor_btnm;
+lv_obj_t * gsr_chart;
 
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 {
@@ -441,26 +442,26 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             // gsr button was pressed
             /*********/
             /* Chart */
-            lv_obj_t * chart;
-            chart = lv_chart_create(lv_scr_act(), NULL);
-            lv_obj_set_size(chart, 200, 150);
-            lv_obj_align(chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
-            lv_chart_set_type(chart, LV_CHART_TYPE_LINE); 
+            gsr_chart = lv_chart_create(lv_scr_act(), NULL);
+            lv_obj_set_hidden(gsr_chart,false);
+            lv_obj_set_size(gsr_chart, 200, 150);
+            lv_obj_align(gsr_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+            lv_chart_set_type(gsr_chart, LV_CHART_TYPE_LINE); 
 
-            lv_chart_series_t * ser1 = lv_chart_add_series(chart, LV_COLOR_RED);
+            lv_chart_series_t * ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 10);
-            lv_chart_set_next(chart, ser1, 30);
-            lv_chart_set_next(chart, ser1, 70);
-            lv_chart_set_next(chart, ser1, 90);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 10);
+            lv_chart_set_next(gsr_chart, ser1, 30);
+            lv_chart_set_next(gsr_chart, ser1, 70);
+            lv_chart_set_next(gsr_chart, ser1, 90);
 
-            lv_chart_refresh(chart);
+            lv_chart_refresh(gsr_chart);
             /*********/
         } else if(strcmp(txt,"Mic")==0) {
             // mic button was pressed
@@ -474,6 +475,7 @@ static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
 {
     if(event == LV_EVENT_CLICKED) {
         lv_obj_set_hidden(sensor_btnm,false);
+        lv_obj_set_hidden(gsr_chart,true);
         printf("Home Button Clicked\n");
     }
 }
