@@ -459,26 +459,9 @@ static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
 void plotInput(void *parameter)
 {
     /***************/
-    /* Halo Effect */
-    static lv_style_t style_halo;
-    lv_style_init(&style_halo);
-    lv_style_set_transition_time(&style_halo, LV_STATE_PRESSED, 400);
-    lv_style_set_transition_time(&style_halo, LV_STATE_DEFAULT, 0);
-    lv_style_set_transition_delay(&style_halo, LV_STATE_DEFAULT, 200);
-    lv_style_set_outline_width(&style_halo, LV_STATE_DEFAULT, 0);
-    lv_style_set_outline_width(&style_halo, LV_STATE_PRESSED, 20);
-    lv_style_set_outline_opa(&style_halo, LV_STATE_DEFAULT, LV_OPA_COVER);
-    lv_style_set_outline_opa(&style_halo, LV_STATE_FOCUSED, LV_OPA_COVER);  
-    lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
-    lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
-    lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
-    /***************/
-
-    /***************/
     /* Home Button */
     lv_obj_t * home_btn = lv_btn_create(lv_scr_act(), NULL);
     lv_obj_align(home_btn, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
-    lv_obj_add_style(home_btn, LV_BTN_PART_MAIN, &style_halo);
     lv_obj_set_style_local_value_str(home_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
     lv_obj_set_event_cb(home_btn, home_btn_event_handler);
     /***************/
