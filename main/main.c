@@ -444,7 +444,7 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             lv_obj_t * chart;
             chart = lv_chart_create(lv_scr_act(), NULL);
             lv_obj_set_size(chart, 200, 150);
-            lv_obj_align(chart, NULL, LV_ALIGN_CENTER, 0, 10);
+            lv_obj_align(chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
             lv_chart_set_type(chart, LV_CHART_TYPE_LINE);   /*Show lines and points too*/
 
             /*Add two data series*/
