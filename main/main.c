@@ -440,6 +440,13 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
         printf("%s was pressed\n", txt);
         if(strcmp(txt,"GSR")==0) {
             // gsr button was pressed
+            lv_obj_t *gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
+            lv_obj_set_size(gsr_text_area, 150, 100);
+            lv_obj_align(gsr_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
+            lv_textarea_set_cursor_hidden(gsr_text_area, true);
+            char gsr_text[100];
+            sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",1000,6000);
+            lv_textarea_set_text(gsr_text_area,gsr_text);   
             /*********/
             /* Chart */
             gsr_chart = lv_chart_create(lv_scr_act(), NULL);
