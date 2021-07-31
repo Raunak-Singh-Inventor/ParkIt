@@ -53,6 +53,7 @@ TaskHandle_t getGsrInputHandle;
 TaskHandle_t getAccelDataHandle;
 TaskHandle_t getMicDataHandle;
 TaskHandle_t plotInputHandle;
+TaskHandle_t mqtt_send_task_handle;
 
 /* The time between each MQTT message publish in milliseconds */
 #define PUBLISH_INTERVAL_MS 500
@@ -221,8 +222,6 @@ void mqtt_send_task(void *param)
         vTaskDelay(pdMS_TO_TICKS(PUBLISH_INTERVAL_MS));
 
         // publisher(&client, base_publish_topic, BASE_PUBLISH_TOPIC_LEN);
-        vTaskResume(getAccelDataHandle);
-        vTaskResume(getMicDataHandle);
     }
 
     // ESP_LOGE(TAG, "An error occurred in the main loop.");
@@ -239,7 +238,9 @@ void app_main()
 
     initialise_wifi();
 
-    xTaskCreatePinnedToCore(&mqtt_send_task, "mqtt send task", 4096 * 2, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(&mqtt_send_task, "mqtt send task", 4096 * 2, NULL, 1, &mqtt_send_task_handle, 1);
+
+    vTaskSuspend(mqtt_send_task_handle);
 
     /* 
     initialize input queue with INPUT_QUE_LEN of inputMessage 
@@ -260,27 +261,33 @@ void app_main()
         "get gsr input",
         4096 * 2,
         NULL,
-        3,
+        1,
         &getGsrInputHandle,
         0);
+
+    vTaskSuspend(getGsrInputHandle);
 
     xTaskCreatePinnedToCore(
         getAccelData,
         "get accel data",
         4096 * 2,
         NULL,
-        2,
+        1,
         &getAccelDataHandle,
         0);
+
+    vTaskSuspend(getAccelDataHandle);
 
     xTaskCreatePinnedToCore(
         getMicData,
         "get mic data",
         4096 * 2,
         NULL,
-        3,
+        1,
         &getMicDataHandle,
-        1);
+        0);
+    
+    vTaskSuspend(getMicDataHandle);
 
     xTaskCreatePinnedToCore(
         plotInput,
@@ -331,7 +338,6 @@ void getGsrInput(void *parameter)
             printf("(getGsrInput) Wasn't able to take changeInputMessageMutex");
         }
         /*---CRITICAL SECTION---*/
-        vTaskSuspend(NULL);
     }
 }
 
@@ -371,7 +377,6 @@ void getAccelData(void *parameter)
             printf("(getAccelData) Wasn't able to take changeInputMessageMutex");
         }
         /*---CRITICAL SECTION---*/
-        vTaskSuspend(NULL);
     }
 }
 
@@ -381,7 +386,6 @@ static void getMicData(void *parameter)
     printf("intialized getMicData task\n");
     while (true)
     {
-        vTaskResume(getGsrInputHandle);
         /* If the speaker was initialized, be sure to call Speaker_Deinit() and 
             disable first. */
         Microphone_Init();
@@ -422,7 +426,32 @@ static void getMicData(void *parameter)
             printf("(getMicData) Wasn't able to take changeInputMessageMutex");
         }
         /*---CRITICAL SECTION---*/
-        vTaskSuspend(NULL);
+    }
+}
+
+lv_obj_t * sensor_btnm;
+
+static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_VALUE_CHANGED) {
+        lv_obj_set_hidden(sensor_btnm,true);
+        const char * txt = lv_btnmatrix_get_active_btn_text(obj);
+        printf("%s was pressed\n", txt);
+        if(strcmp(txt,"GSR")==0) {
+            printf("GSR\n");
+        } else if(strcmp(txt,"Mic")==0) {
+            printf("Mic\n");
+        } else {
+            printf("Accel\n");
+        }
+    }
+}
+
+static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_CLICKED) {
+        lv_obj_set_hidden(sensor_btnm,false);
+        printf("Home Button Clicked\n");
     }
 }
 
@@ -451,15 +480,17 @@ void plotInput(void *parameter)
     lv_obj_align(home_btn, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
     lv_obj_add_style(home_btn, LV_BTN_PART_MAIN, &style_halo);
     lv_obj_set_style_local_value_str(home_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
+    lv_obj_set_event_cb(home_btn, home_btn_event_handler);
     /***************/
 
     /*************************************/
     /* Sensor Button Matrix on Home Page */
     static const char * sensor_btnm_map[] = {"GSR", "Mic", "Accel",""};
 
-    lv_obj_t * sensor_btnm = lv_btnmatrix_create(lv_scr_act(), NULL);
+    sensor_btnm = lv_btnmatrix_create(lv_scr_act(), NULL);
     lv_btnmatrix_set_map(sensor_btnm, sensor_btnm_map);
     lv_obj_align(sensor_btnm, NULL, LV_ALIGN_CENTER, 5, 10);
+    lv_obj_set_event_cb(sensor_btnm, sensor_btnm_event_handler);
     /*************************************/
 
     struct InputMessage rMessage; // struct of type InputMessage to store the recieved message
