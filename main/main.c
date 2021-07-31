@@ -431,6 +431,7 @@ static void getMicData(void *parameter)
 
 lv_obj_t * sensor_btnm;
 lv_obj_t * gsr_chart;
+lv_obj_t *gsr_text_area;
 
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 {
@@ -440,7 +441,8 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
         printf("%s was pressed\n", txt);
         if(strcmp(txt,"GSR")==0) {
             // gsr button was pressed
-            lv_obj_t *gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
+            gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
+            lv_obj_set_hidden(gsr_text_area,false);
             lv_obj_set_size(gsr_text_area, 150, 100);
             lv_obj_align(gsr_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
             lv_textarea_set_cursor_hidden(gsr_text_area, true);
@@ -474,6 +476,7 @@ static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
     if(event == LV_EVENT_CLICKED) {
         lv_obj_set_hidden(sensor_btnm,false);
         lv_obj_set_hidden(gsr_chart,true);
+        lv_obj_set_hidden(gsr_text_area,true);
         printf("Home Button Clicked\n");
     }
 }
