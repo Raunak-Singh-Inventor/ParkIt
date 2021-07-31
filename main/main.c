@@ -25,6 +25,7 @@
 void getGsrInput(void *parameter);
 void getAccelData(void *parameter);
 static void getMicData(void *parameter);
+void barTimerHandler(void *param);
 void plotInput(void *parameter);
 
 static QueueHandle_t input_queue = NULL; // queue to store input from sensors
@@ -54,6 +55,7 @@ TaskHandle_t getAccelDataHandle;
 TaskHandle_t getMicDataHandle;
 TaskHandle_t plotInputHandle;
 TaskHandle_t mqtt_send_task_handle;
+TaskHandle_t barTimerHandler_handle;
 
 /* The time between each MQTT message publish in milliseconds */
 #define PUBLISH_INTERVAL_MS 500
@@ -297,6 +299,16 @@ void app_main()
         1,
         &plotInputHandle,
         0);
+    
+    xTaskCreatePinnedToCore(
+        barTimerHandler,
+        "bar timer handler",
+        4096*2,
+        NULL,
+        1,
+        &barTimerHandler_handle,
+        1
+    );
 }
 
 // get the GSR input from Port B and send it into the gsr queue
@@ -432,6 +444,29 @@ static void getMicData(void *parameter)
 lv_obj_t * sensor_btnm;
 lv_obj_t * gsr_chart;
 lv_obj_t *gsr_text_area;
+lv_obj_t * gsr_timer_bar;
+lv_obj_t * start_btn;
+
+bool isBarTimerComplete=true;
+
+void barTimerHandler(void *param) {
+    int counter = 0;
+    while(true){
+        if(isBarTimerComplete==false) {
+            counter++;
+            printf("hello %d\n",counter);
+            lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+    }
+}
+
+void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) {
+    isBarTimerComplete = false;
+    vTaskDelay(pdMS_TO_TICKS(100));
+    isBarTimerComplete = true;
+    lv_bar_set_value(gsr_timer_bar, 100, LV_ANIM_ON);
+}
 
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 {
@@ -443,13 +478,21 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             // gsr button was pressed
             gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(gsr_text_area,false);
-            lv_obj_set_size(gsr_text_area, 150, 100);
+            lv_obj_set_size(gsr_text_area, 147, 100);
             lv_obj_align(gsr_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
             lv_textarea_set_cursor_hidden(gsr_text_area, true);
             char gsr_text[100];
             sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",1000,6000);
             lv_textarea_set_text(gsr_text_area,gsr_text);   
             /*********/
+            /*************/
+            /* Timer Bar */
+            gsr_timer_bar = lv_bar_create(lv_scr_act(), NULL);
+            lv_obj_set_hidden(gsr_timer_bar,false);
+            lv_obj_set_size(gsr_timer_bar, 147, 15);
+            lv_obj_align(gsr_timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
+            lv_bar_set_anim_time(gsr_timer_bar, 1);
+            /*************/
             /* Chart */
             gsr_chart = lv_chart_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(gsr_chart,false);
@@ -463,6 +506,26 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 
             lv_chart_refresh(gsr_chart);
             /*********/
+            static lv_style_t style_halo;
+            lv_style_init(&style_halo);
+            lv_style_set_transition_time(&style_halo, LV_STATE_PRESSED, 400);
+            lv_style_set_transition_time(&style_halo, LV_STATE_DEFAULT, 0);
+            lv_style_set_transition_delay(&style_halo, LV_STATE_DEFAULT, 200);
+            lv_style_set_outline_width(&style_halo, LV_STATE_DEFAULT, 0);
+            lv_style_set_outline_width(&style_halo, LV_STATE_PRESSED, 20);
+            lv_style_set_outline_opa(&style_halo, LV_STATE_DEFAULT, LV_OPA_COVER);
+            lv_style_set_outline_opa(&style_halo, LV_STATE_FOCUSED, LV_OPA_COVER);
+            lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
+            lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
+            lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
+
+            start_btn = lv_btn_create(lv_scr_act(), NULL);
+            lv_obj_set_hidden(start_btn,false);
+            lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -20, 0);
+            lv_obj_add_style(start_btn, LV_BTN_PART_MAIN, &style_halo);
+
+            lv_obj_set_style_local_value_str(start_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Start");
+            lv_obj_set_event_cb(start_btn,start_btn_event_handler);
         } else if(strcmp(txt,"Mic")==0) {
             // mic button was pressed
         } else {
@@ -477,6 +540,8 @@ static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
         lv_obj_set_hidden(sensor_btnm,false);
         lv_obj_set_hidden(gsr_chart,true);
         lv_obj_set_hidden(gsr_text_area,true);
+        lv_obj_set_hidden(gsr_timer_bar,true);
+        lv_obj_set_hidden(start_btn,true);
         printf("Home Button Clicked\n");
     }
 }
