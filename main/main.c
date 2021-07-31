@@ -438,11 +438,11 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
         const char * txt = lv_btnmatrix_get_active_btn_text(obj);
         printf("%s was pressed\n", txt);
         if(strcmp(txt,"GSR")==0) {
-            printf("GSR\n");
+            // gsr button was pressed
         } else if(strcmp(txt,"Mic")==0) {
-            printf("Mic\n");
+            // mic button was pressed
         } else {
-            printf("Accel\n");
+            // accel button was pressed
         }
     }
 }
