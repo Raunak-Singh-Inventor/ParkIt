@@ -450,6 +450,11 @@ void barTimerHandler(void *param) {
             lv_chart_set_next(gsr_chart, ser1, gsr);
             lv_textarea_set_text(gsr_text_area,gsr_text);
             vTaskDelay(10);
+        } else {
+            gsr = 0;
+            gsr_avg = 0;
+            gsr_sum = 0;
+            counter = 0;
         }
     }
 }
