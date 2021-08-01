@@ -259,17 +259,6 @@ void app_main()
     changeInputMessageMutex = xSemaphoreCreateMutex(); // initialize the mutex
 
     xTaskCreatePinnedToCore(
-        getGsrInput,
-        "get gsr input",
-        4096 * 2,
-        NULL,
-        1,
-        &getGsrInputHandle,
-        0);
-
-    vTaskSuspend(getGsrInputHandle);
-
-    xTaskCreatePinnedToCore(
         getAccelData,
         "get accel data",
         4096 * 2,
@@ -313,43 +302,40 @@ void app_main()
 
 int gsr = 0;
 int gsr_avg = 0;
+int gsr_sum = 0;
+int counter = 0;
 // get the GSR input from Port B and send it into the gsr queue
 void getGsrInput(void *parameter)
 {
-    int gsr_sum = 0;
-    int counter = 0;
-    while (true)
-    {
-        Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC); // Sets Port B (ADC) as the pinmode
-        gsr = Core2ForAWS_Port_B_ADC_ReadRaw();
-        gsr_sum+=gsr;
-        counter++;
-        gsr_avg = gsr_sum/counter;
-        /*---CRITICAL SECTION---*/
-        if (xSemaphoreTake(changeInputMessageMutex, 10) == pdTRUE)
-        { // see if task can take the changeInputMessageMutex
-            /**********************************************************/
-            inputMessage.value = gsr; // Sets inputMessage.value to the value inputted by the sensor
-            inputMessage.type = "gsr";      // Sets the type of value to "gsr"
-            /*******************************************************************************/
-            /* send inputMessage struct to queue and output if the send succeded or failed */
-            if (xQueueSend(input_queue, &inputMessage, 10) == pdTRUE)
-            {
-                printf("(getGsrInput) succesfully sent value of %d and type of %s to input queue\n", inputMessage.value, inputMessage.type);
-            }
-            else
-            {
-                printf("(getGsrInput) failed to send value of %d and type of %s to input queue\n", inputMessage.value, inputMessage.type);
-            }
-            /*******************************************************************************/
-            xSemaphoreGive(changeInputMessageMutex); // release the mutex at the end of critical section
+    Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC); // Sets Port B (ADC) as the pinmode
+    gsr = Core2ForAWS_Port_B_ADC_ReadRaw();
+    gsr_sum+=gsr;
+    counter++;
+    gsr_avg = gsr_sum/counter;
+    /*---CRITICAL SECTION---*/
+    if (xSemaphoreTake(changeInputMessageMutex, 10) == pdTRUE)
+    { // see if task can take the changeInputMessageMutex
+        /**********************************************************/
+        inputMessage.value = gsr; // Sets inputMessage.value to the value inputted by the sensor
+        inputMessage.type = "gsr";      // Sets the type of value to "gsr"
+        /*******************************************************************************/
+        /* send inputMessage struct to queue and output if the send succeded or failed */
+        if (xQueueSend(input_queue, &inputMessage, 10) == pdTRUE)
+        {
+            printf("(getGsrInput) succesfully sent value of %d and type of %s to input queue\n", inputMessage.value, inputMessage.type);
         }
         else
         {
-            printf("(getGsrInput) Wasn't able to take changeInputMessageMutex");
+            printf("(getGsrInput) failed to send value of %d and type of %s to input queue\n", inputMessage.value, inputMessage.type);
         }
-        /*---CRITICAL SECTION---*/
+        /*******************************************************************************/
+        xSemaphoreGive(changeInputMessageMutex); // release the mutex at the end of critical section
     }
+    else
+    {
+        printf("(getGsrInput) Wasn't able to take changeInputMessageMutex");
+    }
+    /*---CRITICAL SECTION---*/
 }
 
 // get the data from the 6-axis IMU and push it to input queue
@@ -450,17 +436,20 @@ lv_chart_series_t * ser1;
 bool isBarTimerComplete=true;
 
 void barTimerHandler(void *param) {
-    int counter = 0;
     while(true){
         if(isBarTimerComplete==false) {
-            lv_bar_set_value(gsr_timer_bar, 100, LV_ANIM_ON);
-            vTaskResume(getGsrInputHandle);
-            counter++;
-            printf("running %d\n",counter);
+            getGsrInput(NULL);
+            if(counter<=100) {
+                lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
+            } else {
+                isBarTimerComplete = true;
+            }
+            printf("coutner: %d", counter);
             char gsr_text[100];
             sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",gsr,gsr_avg);
             lv_chart_set_next(gsr_chart, ser1, gsr);
             lv_textarea_set_text(gsr_text_area,gsr_text);
+            vTaskDelay(10);
         }
     }
 }
@@ -468,9 +457,6 @@ void barTimerHandler(void *param) {
 void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) {
     lv_obj_set_hidden(start_btn,true);
     isBarTimerComplete = false;
-    vTaskDelay(pdMS_TO_TICKS(100));
-    isBarTimerComplete = true;
-    vTaskSuspend(getGsrInputHandle);
 }
 
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
