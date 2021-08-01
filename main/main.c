@@ -311,26 +311,25 @@ void app_main()
     );
 }
 
+int gsr = 0;
+int gsr_avg = 0;
 // get the GSR input from Port B and send it into the gsr queue
 void getGsrInput(void *parameter)
 {
-    printf("initialized getGSRInput task\n"); // signals that getGsrInput is initialized
+    int gsr_sum = 0;
+    int counter = 0;
     while (true)
     {
         Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC); // Sets Port B (ADC) as the pinmode
-        /**********************************************************/
-        /* average 10 input values to get a more accurate reading */
-        int gsr_value = 0;
-        for (int i = 0; i < 10; i++)
-        {
-            gsr_value += Core2ForAWS_Port_B_ADC_ReadRaw();
-        }
-        gsr_value /= 10;
+        gsr = Core2ForAWS_Port_B_ADC_ReadRaw();
+        gsr_sum+=gsr;
+        counter++;
+        gsr_avg = gsr_sum/counter;
         /*---CRITICAL SECTION---*/
         if (xSemaphoreTake(changeInputMessageMutex, 10) == pdTRUE)
         { // see if task can take the changeInputMessageMutex
             /**********************************************************/
-            inputMessage.value = gsr_value; // Sets inputMessage.value to the value inputted by the sensor
+            inputMessage.value = gsr; // Sets inputMessage.value to the value inputted by the sensor
             inputMessage.type = "gsr";      // Sets the type of value to "gsr"
             /*******************************************************************************/
             /* send inputMessage struct to queue and output if the send succeded or failed */
@@ -446,6 +445,7 @@ lv_obj_t * gsr_chart;
 lv_obj_t *gsr_text_area;
 lv_obj_t * gsr_timer_bar;
 lv_obj_t * start_btn;
+lv_chart_series_t * ser1;
 
 bool isBarTimerComplete=true;
 
@@ -453,19 +453,24 @@ void barTimerHandler(void *param) {
     int counter = 0;
     while(true){
         if(isBarTimerComplete==false) {
+            lv_bar_set_value(gsr_timer_bar, 100, LV_ANIM_ON);
+            vTaskResume(getGsrInputHandle);
             counter++;
-            printf("hello %d\n",counter);
-            lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
-            vTaskDelay(pdMS_TO_TICKS(10));
+            printf("running %d\n",counter);
+            char gsr_text[100];
+            sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",gsr,gsr_avg);
+            lv_chart_set_next(gsr_chart, ser1, gsr);
+            lv_textarea_set_text(gsr_text_area,gsr_text);
         }
     }
 }
 
 void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) {
+    lv_obj_set_hidden(start_btn,true);
     isBarTimerComplete = false;
     vTaskDelay(pdMS_TO_TICKS(100));
     isBarTimerComplete = true;
-    lv_bar_set_value(gsr_timer_bar, 100, LV_ANIM_ON);
+    vTaskSuspend(getGsrInputHandle);
 }
 
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
@@ -482,7 +487,7 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             lv_obj_align(gsr_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
             lv_textarea_set_cursor_hidden(gsr_text_area, true);
             char gsr_text[100];
-            sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",1000,6000);
+            sprintf(gsr_text,"GSR:  \n--------------------\nMoving Average:  ");
             lv_textarea_set_text(gsr_text_area,gsr_text);   
             /*********/
             /*************/
@@ -491,7 +496,7 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             lv_obj_set_hidden(gsr_timer_bar,false);
             lv_obj_set_size(gsr_timer_bar, 147, 15);
             lv_obj_align(gsr_timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
-            lv_bar_set_anim_time(gsr_timer_bar, 1);
+            lv_bar_set_anim_time(gsr_timer_bar, 2000);
             /*************/
             /* Chart */
             gsr_chart = lv_chart_create(lv_scr_act(), NULL);
@@ -499,10 +504,9 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             lv_obj_set_size(gsr_chart, 300, 50);
             lv_obj_align(gsr_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
             lv_chart_set_type(gsr_chart, LV_CHART_TYPE_LINE); 
+            lv_chart_set_range(gsr_chart,1000,4095);
 
-            lv_chart_series_t * ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
-
-            lv_chart_set_next(gsr_chart, ser1, 10);
+            ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
             lv_chart_refresh(gsr_chart);
             /*********/
