@@ -299,7 +299,12 @@ void barTimerHandler(void *param) {
 
 void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
 {
-    lv_obj_set_hidden(start_btn,true);
+    gsr = 0;
+    gsr_avg = 0;
+    gsr_sum = 0;
+    counter = 0;
+    listCounter = 0;
+    listType = "";
     isBarTimerComplete = false;
 }
 
@@ -350,14 +355,14 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 
             start_btn = lv_btn_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(start_btn,false);
-            lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -20, 0);
+            lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25,10);
+            lv_obj_set_size(start_btn,140,35);
             lv_obj_add_style(start_btn, LV_BTN_PART_MAIN, &style_halo);
-
             lv_obj_set_style_local_value_str(start_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Start");
             lv_obj_set_event_cb(start_btn,start_btn_event_handler);
 
             send_btn = lv_btn_create(lv_scr_act(), NULL);
-            lv_obj_align(send_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -20, -30);
+            lv_obj_align(send_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, -30);
             lv_obj_add_style(send_btn, LV_BTN_PART_MAIN, &style_halo);
             lv_obj_set_size(send_btn,140,35);
             lv_obj_set_style_local_value_str(send_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Send");
