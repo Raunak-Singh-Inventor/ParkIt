@@ -24,12 +24,14 @@
 
 void disconnect_callback_handler(AWS_IoT_Client *pClient, void *data);
 static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_topic_len);
+static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt);
 void mqtt_send(void *param);
 void getGsrInput(void *parameter);
 void barTimerHandler(void *param);
 void start_btn_event_handler(lv_obj_t * obj, lv_event_t event);
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event);
 static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event);
+static void send_btn_event_handler(lv_obj_t * obj, lv_event_t event);
 
 TaskHandle_t barTimerHandler_handle;
 
@@ -40,11 +42,19 @@ lv_obj_t * gsr_timer_bar;
 lv_obj_t * start_btn;
 lv_chart_series_t * ser1;
 lv_obj_t * home_btn;
+lv_obj_t * send_btn;
+lv_obj_t * mbox1;
+
+bool isBarTimerComplete=true;
 
 int gsr = 0;
 int gsr_avg = 0;
 int gsr_sum = 0;
 int counter = 0;
+
+int list[110];
+char *listType;
+int listCounter = 0;
 
 static const char *TAG = "MAIN";
 
@@ -124,13 +134,31 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *)cPayload;
     paramsQOS1.isRetained = 0;
-    sprintf(cPayload, "hello");
-    paramsQOS1.payloadLen = strlen(cPayload);
-    IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
-    if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
-    {
-        ESP_LOGW(TAG, "QOS1 publish not received.");
-        rc = SUCCESS;
+    for(int i = 0; i < 101; i++) {
+        sprintf(cPayload, "{\"value\":%d,\"type\":\"%s\"}",list[i],listType);
+        paramsQOS1.payloadLen = strlen(cPayload);
+        IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
+        if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
+        {
+            ESP_LOGW(TAG, "QOS1 publish not received.");
+            rc = SUCCESS;
+        }
+    }
+}
+
+static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
+{
+    if(evt==LV_EVENT_VALUE_CHANGED) {
+        lv_obj_set_hidden(gsr_chart,true);
+        lv_obj_set_hidden(gsr_text_area,true);
+        lv_obj_set_hidden(gsr_timer_bar,true);
+        lv_obj_set_hidden(start_btn,true);
+        lv_obj_set_hidden(send_btn,true);
+        lv_obj_set_hidden(mbox1,true);
+        listCounter = 0;
+        listType = "";
+        isBarTimerComplete = true;
+        lv_obj_set_hidden(sensor_btnm,false);
     }
 }
 
@@ -212,32 +240,39 @@ void mqtt_send(void *param)
     ESP_LOGI(TAG, "\n****************************************\n*  AWS client Id - %s  *\n****************************************\n\n",
              client_id);
 
-    while ((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
+    if((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
     {
 
         rc = aws_iot_mqtt_yield(&client, 100);
-        if (NETWORK_ATTEMPTING_RECONNECT == rc)
-        {
-            continue;
-        }
 
         ESP_LOGD(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
-        vTaskDelay(pdMS_TO_TICKS(500));
 
         publisher(&client, base_publish_topic, BASE_PUBLISH_TOPIC_LEN);
+
+        static const char * btns[] ={"Continue", ""};
+
+        mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(mbox1,false);
+        lv_msgbox_set_text(mbox1, "Done!");
+        lv_msgbox_add_btns(mbox1, btns);
+        lv_obj_set_width(mbox1, 200);
+        lv_obj_set_event_cb(mbox1, mbox_event_cb);
+        lv_obj_align(mbox1, NULL, LV_ALIGN_CENTER, 0, 0); 
     }
 }
 
 void getGsrInput(void *parameter)
 {
+    listType = "GSR";
     Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC); 
     gsr = Core2ForAWS_Port_B_ADC_ReadRaw();
     gsr_sum+=gsr;
     counter++;
     gsr_avg = gsr_sum/counter;
+    list[listCounter] = gsr;
+    listCounter++;
 }
 
-bool isBarTimerComplete=true;
 void barTimerHandler(void *param) {
     while(true){
         if(isBarTimerComplete==false) {
@@ -246,6 +281,7 @@ void barTimerHandler(void *param) {
                 lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
             } else {
                 isBarTimerComplete = true;
+                lv_obj_set_hidden(send_btn,false);
             }
             char gsr_text[100];
             sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",gsr,gsr_avg);
@@ -261,7 +297,8 @@ void barTimerHandler(void *param) {
     }
 }
 
-void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) {
+void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
+{
     lv_obj_set_hidden(start_btn,true);
     isBarTimerComplete = false;
 }
@@ -318,6 +355,14 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 
             lv_obj_set_style_local_value_str(start_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Start");
             lv_obj_set_event_cb(start_btn,start_btn_event_handler);
+
+            send_btn = lv_btn_create(lv_scr_act(), NULL);
+            lv_obj_align(send_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -20, -30);
+            lv_obj_add_style(send_btn, LV_BTN_PART_MAIN, &style_halo);
+            lv_obj_set_size(send_btn,140,35);
+            lv_obj_set_style_local_value_str(send_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Send");
+            lv_obj_set_event_cb(send_btn,send_btn_event_handler);
+            lv_obj_set_hidden(send_btn,true);
         } else if(strcmp(txt,"Mic")==0) {
         } else {
         }
@@ -332,6 +377,17 @@ static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
         lv_obj_set_hidden(gsr_text_area,true);
         lv_obj_set_hidden(gsr_timer_bar,true);
         lv_obj_set_hidden(start_btn,true);
+        lv_obj_set_hidden(send_btn,true);
+        lv_obj_set_hidden(mbox1,true);
+        listCounter = 0;
+        listType = "";
         isBarTimerComplete = true;
+    }
+}
+
+static void send_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
+{
+    if(event == LV_EVENT_CLICKED) {
+        mqtt_send(NULL);
     }
 }
