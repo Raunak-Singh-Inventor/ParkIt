@@ -38,7 +38,7 @@ TaskHandle_t barTimerHandler_handle;
 lv_obj_t *sensor_btnm;
 lv_obj_t *gsr_chart;
 lv_obj_t *gsr_text_area;
-lv_obj_t *gsr_timer_bar;
+lv_obj_t *timer_bar;
 lv_obj_t *start_btn;
 lv_chart_series_t *ser1;
 lv_obj_t *home_btn;
@@ -152,7 +152,7 @@ static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
     {
         lv_obj_set_hidden(gsr_chart, true);
         lv_obj_set_hidden(gsr_text_area, true);
-        lv_obj_set_hidden(gsr_timer_bar, true);
+        lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_hidden(start_btn, true);
         lv_obj_set_hidden(send_btn, true);
         lv_obj_set_hidden(mbox1, true);
@@ -284,7 +284,7 @@ void barTimerHandler(void *param)
                 getGsrInput(NULL);
                 if (counter <= 100)
                 {
-                    lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
+                    lv_bar_set_value(timer_bar, counter, LV_ANIM_ON);
                 }
                 else
                 {
@@ -342,11 +342,11 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             sprintf(gsr_text, "GSR:  \n--------------------\nMoving Average:  ");
             lv_textarea_set_text(gsr_text_area, gsr_text);
 
-            gsr_timer_bar = lv_bar_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(gsr_timer_bar, false);
-            lv_obj_set_size(gsr_timer_bar, 147, 15);
-            lv_obj_align(gsr_timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
-            lv_bar_set_anim_time(gsr_timer_bar, 2000);
+            timer_bar = lv_bar_create(lv_scr_act(), NULL);
+            lv_obj_set_hidden(timer_bar, false);
+            lv_obj_set_size(timer_bar, 147, 15);
+            lv_obj_align(timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
+            lv_bar_set_anim_time(timer_bar, 2000);
 
             gsr_chart = lv_chart_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(gsr_chart, false);
@@ -404,7 +404,7 @@ static void home_btn_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_hidden(sensor_btnm, false);
         lv_obj_set_hidden(gsr_chart, true);
         lv_obj_set_hidden(gsr_text_area, true);
-        lv_obj_set_hidden(gsr_timer_bar, true);
+        lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_hidden(start_btn, true);
         lv_obj_set_hidden(send_btn, true);
         listCounter = 0;
