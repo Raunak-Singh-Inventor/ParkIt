@@ -361,10 +361,12 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_style_local_value_str(send_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Send");
         lv_obj_set_event_cb(send_btn, send_btn_event_handler);
         lv_obj_set_hidden(send_btn, true);
+        gsr_chart = lv_chart_create(lv_scr_act(), NULL);
+        gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
         if (strcmp(txt, "GSR") == 0)
         {
             listType = "GSR";
-            gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
+
             lv_obj_set_hidden(gsr_text_area, false);
             lv_obj_set_size(gsr_text_area, 147, 100);
             lv_obj_align(gsr_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
@@ -373,7 +375,6 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             sprintf(gsr_text, "GSR:  \n--------------------\nMoving Average:  ");
             lv_textarea_set_text(gsr_text_area, gsr_text);
 
-            gsr_chart = lv_chart_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(gsr_chart, false);
             lv_obj_set_size(gsr_chart, 300, 50);
             lv_obj_align(gsr_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
@@ -386,6 +387,8 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         }
         else if (strcmp(txt, "Mic") == 0)
         {
+            lv_obj_set_hidden(gsr_chart, true);
+            lv_obj_set_hidden(gsr_text_area, true);
         }
         else
         {
