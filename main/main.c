@@ -44,12 +44,20 @@ lv_chart_series_t *gsr_ser1;
 lv_obj_t *home_btn;
 lv_obj_t *send_btn;
 lv_obj_t *mbox1;
+lv_obj_t *mic_chart;
+lv_chart_series_t *mic_ser1;
+lv_obj_t *mic_text_area;
 
 bool isBarTimerComplete = true;
 
 int gsr = 0;
 int gsr_avg = 0;
 int gsr_sum = 0;
+
+int mic = 0;
+int mic_avg = 0;
+int mic_sum = 0;
+
 int counter = 0;
 
 int list[110];
@@ -152,6 +160,8 @@ static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
     {
         lv_obj_set_hidden(gsr_chart, true);
         lv_obj_set_hidden(gsr_text_area, true);
+        lv_obj_set_hidden(mic_chart, true);
+        lv_obj_set_hidden(mic_text_area, true);
         lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_hidden(start_btn, true);
         lv_obj_set_hidden(send_btn, true);
@@ -254,7 +264,7 @@ void mqtt_send(void *param)
 
         mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
         lv_obj_set_hidden(mbox1, false);
-        lv_msgbox_set_text(mbox1, "Done!");
+        lv_msgbox_set_text(mbox1, "Open the Park It! website to view the updated data");
         lv_msgbox_add_btns(mbox1, btns);
         lv_obj_set_width(mbox1, 200);
         lv_obj_set_event_cb(mbox1, mbox_event_cb);
@@ -270,6 +280,28 @@ void getGsrInput(void *parameter)
     counter++;
     gsr_avg = gsr_sum / counter;
     list[listCounter] = gsr;
+    listCounter++;
+}
+
+void getMicInput(void *parameter)
+{
+    /* If the speaker was initialized, be sure to call Speaker_Deinit() and 
+            disable first. */
+    Microphone_Init();
+    static int8_t i2s_readraw_buf[1024];
+    size_t bytes_read;
+    i2s_read(MIC_I2S_NUMBER, (char *)i2s_readraw_buf, 1024, &bytes_read, pdMS_TO_TICKS(100));
+    Microphone_Deinit();
+    int noise_sum = 0;
+    for (uint16_t i = 0; i < 1024; i++)
+    {
+        noise_sum += i2s_readraw_buf[i];
+    }
+    mic = noise_sum / 1024;
+    mic_sum += mic;
+    counter++;
+    mic_avg = mic_sum / counter;
+    list[listCounter] = mic;
     listCounter++;
 }
 
@@ -299,6 +331,21 @@ void barTimerHandler(void *param)
             }
             else if (strcmp(listType, "Mic") == 0)
             {
+                getMicInput(NULL);
+                if (counter <= 100)
+                {
+                    lv_bar_set_value(timer_bar, counter, LV_ANIM_ON);
+                }
+                else
+                {
+                    isBarTimerComplete = true;
+                    lv_obj_set_hidden(send_btn, false);
+                }
+                char mic_text[100];
+                sprintf(mic_text, "Mic: %d\n--------------------\nMoving Average: %d", mic, mic_avg);
+                lv_chart_set_next(mic_chart, mic_ser1, mic);
+                lv_textarea_set_text(mic_text_area, mic_text);
+                vTaskDelay(10);
             }
             else
             {
@@ -309,6 +356,9 @@ void barTimerHandler(void *param)
             gsr = 0;
             gsr_avg = 0;
             gsr_sum = 0;
+            mic = 0;
+            mic_avg = 0;
+            mic_sum = 0;
             counter = 0;
         }
     }
@@ -319,6 +369,9 @@ void start_btn_event_handler(lv_obj_t *obj, lv_event_t event)
     gsr = 0;
     gsr_avg = 0;
     gsr_sum = 0;
+    mic = 0;
+    mic_avg = 0;
+    mic_sum = 0;
     counter = 0;
     listCounter = 0;
     isBarTimerComplete = false;
@@ -331,7 +384,7 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_hidden(sensor_btnm, true);
         const char *txt = lv_btnmatrix_get_active_btn_text(obj);
         timer_bar = lv_bar_create(lv_scr_act(), NULL);
-        lv_obj_set_hidden(timer_bar, false);
+        lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_size(timer_bar, 147, 15);
         lv_obj_align(timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
         lv_bar_set_anim_time(timer_bar, 2000);
@@ -348,7 +401,7 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
         lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
         start_btn = lv_btn_create(lv_scr_act(), NULL);
-        lv_obj_set_hidden(start_btn, false);
+        lv_obj_set_hidden(start_btn, true);
         lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, 10);
         lv_obj_set_size(start_btn, 140, 35);
         lv_obj_add_style(start_btn, LV_BTN_PART_MAIN, &style_halo);
@@ -362,9 +415,17 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_event_cb(send_btn, send_btn_event_handler);
         lv_obj_set_hidden(send_btn, true);
         gsr_chart = lv_chart_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(gsr_chart, true);
         gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(gsr_text_area, true);
+        mic_chart = lv_chart_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(mic_chart, true);
+        mic_text_area = lv_textarea_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(mic_text_area, true);
         if (strcmp(txt, "GSR") == 0)
         {
+            lv_obj_set_hidden(mic_chart, true);
+            lv_obj_set_hidden(mic_text_area, true);
             listType = "GSR";
 
             lv_obj_set_hidden(gsr_text_area, false);
@@ -384,11 +445,36 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             gsr_ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
             lv_chart_refresh(gsr_chart);
+
+            lv_obj_set_hidden(start_btn, false);
+            lv_obj_set_hidden(timer_bar, false);
         }
         else if (strcmp(txt, "Mic") == 0)
         {
             lv_obj_set_hidden(gsr_chart, true);
             lv_obj_set_hidden(gsr_text_area, true);
+            lv_obj_set_hidden(start_btn, false);
+            lv_obj_set_hidden(timer_bar, false);
+
+            listType = "Mic";
+
+            lv_obj_set_hidden(mic_text_area, false);
+            lv_obj_set_size(mic_text_area, 147, 100);
+            lv_obj_align(mic_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
+            lv_textarea_set_cursor_hidden(mic_text_area, true);
+            char mic_text[100];
+            sprintf(mic_text, "Mic:  \n--------------------\nMoving Average:  ");
+            lv_textarea_set_text(mic_text_area, mic_text);
+
+            lv_obj_set_hidden(mic_chart, false);
+            lv_obj_set_size(mic_chart, 300, 50);
+            lv_obj_align(mic_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
+            lv_chart_set_type(mic_chart, LV_CHART_TYPE_LINE);
+            lv_chart_set_range(mic_chart, -100, 0);
+
+            mic_ser1 = lv_chart_add_series(mic_chart, LV_COLOR_RED);
+
+            lv_chart_refresh(mic_chart);
         }
         else
         {
@@ -403,6 +489,8 @@ static void home_btn_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_hidden(sensor_btnm, false);
         lv_obj_set_hidden(gsr_chart, true);
         lv_obj_set_hidden(gsr_text_area, true);
+        lv_obj_set_hidden(mic_chart, true);
+        lv_obj_set_hidden(mic_text_area, true);
         lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_hidden(start_btn, true);
         lv_obj_set_hidden(send_btn, true);
