@@ -335,6 +335,18 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_size(timer_bar, 147, 15);
         lv_obj_align(timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
         lv_bar_set_anim_time(timer_bar, 2000);
+        static lv_style_t style_halo;
+        lv_style_init(&style_halo);
+        lv_style_set_transition_time(&style_halo, LV_STATE_PRESSED, 400);
+        lv_style_set_transition_time(&style_halo, LV_STATE_DEFAULT, 0);
+        lv_style_set_transition_delay(&style_halo, LV_STATE_DEFAULT, 200);
+        lv_style_set_outline_width(&style_halo, LV_STATE_DEFAULT, 0);
+        lv_style_set_outline_width(&style_halo, LV_STATE_PRESSED, 20);
+        lv_style_set_outline_opa(&style_halo, LV_STATE_DEFAULT, LV_OPA_COVER);
+        lv_style_set_outline_opa(&style_halo, LV_STATE_FOCUSED, LV_OPA_COVER);
+        lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
+        lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
+        lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
         if (strcmp(txt, "GSR") == 0)
         {
             listType = "GSR";
@@ -357,19 +369,6 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             gsr_ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
             lv_chart_refresh(gsr_chart);
-
-            static lv_style_t style_halo;
-            lv_style_init(&style_halo);
-            lv_style_set_transition_time(&style_halo, LV_STATE_PRESSED, 400);
-            lv_style_set_transition_time(&style_halo, LV_STATE_DEFAULT, 0);
-            lv_style_set_transition_delay(&style_halo, LV_STATE_DEFAULT, 200);
-            lv_style_set_outline_width(&style_halo, LV_STATE_DEFAULT, 0);
-            lv_style_set_outline_width(&style_halo, LV_STATE_PRESSED, 20);
-            lv_style_set_outline_opa(&style_halo, LV_STATE_DEFAULT, LV_OPA_COVER);
-            lv_style_set_outline_opa(&style_halo, LV_STATE_FOCUSED, LV_OPA_COVER);
-            lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
-            lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
-            lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
 
             start_btn = lv_btn_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(start_btn, false);
