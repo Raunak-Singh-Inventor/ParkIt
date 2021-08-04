@@ -47,6 +47,11 @@ lv_obj_t *mbox1;
 lv_obj_t *mic_chart;
 lv_chart_series_t *mic_ser1;
 lv_obj_t *mic_text_area;
+lv_obj_t *accel_chart;
+lv_chart_series_t *accel_ser1;
+lv_chart_series_t *accel_ser2;
+lv_chart_series_t *accel_ser3;
+lv_obj_t *accel_text_area;
 
 bool isBarTimerComplete = true;
 
@@ -58,9 +63,14 @@ int mic = 0;
 int mic_avg = 0;
 int mic_sum = 0;
 
+float accelZero = 0;
+float accelOne = 0;
+float accelTwo = 0;
+
 int counter = 0;
 
 int list[110];
+float accelList[330];
 char *listType;
 int listCounter = 0;
 
@@ -141,15 +151,49 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *)cPayload;
     paramsQOS1.isRetained = 0;
-    for (int i = 0; i < 101; i++)
+    if (strcmp(listType, "Accel") != 0)
     {
-        sprintf(cPayload, "{\"value\":%d,\"type\":\"%s\"}", list[i], listType);
-        paramsQOS1.payloadLen = strlen(cPayload);
-        IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
-        if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
+        for (int i = 0; i < 101; i++)
         {
-            ESP_LOGW(TAG, "QOS1 publish not received.");
-            rc = SUCCESS;
+            sprintf(cPayload, "{\"value\":%d,\"type\":\"%s\"}", list[i], listType);
+            paramsQOS1.payloadLen = strlen(cPayload);
+            IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
+            if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
+            {
+                ESP_LOGW(TAG, "QOS1 publish not received.");
+                rc = SUCCESS;
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 303; i++)
+        {
+            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i], "X");
+            paramsQOS1.payloadLen = strlen(cPayload);
+            IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
+            if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
+            {
+                ESP_LOGW(TAG, "QOS1 publish not received.");
+                rc = SUCCESS;
+            }
+            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i + 1], "Y");
+            paramsQOS1.payloadLen = strlen(cPayload);
+            rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
+            if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
+            {
+                ESP_LOGW(TAG, "QOS1 publish not received.");
+                rc = SUCCESS;
+            }
+            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i + 2], "Z");
+            paramsQOS1.payloadLen = strlen(cPayload);
+            rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
+            if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
+            {
+                ESP_LOGW(TAG, "QOS1 publish not received.");
+                rc = SUCCESS;
+            }
+            i += 2;
         }
     }
 }
@@ -162,12 +206,13 @@ static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
         lv_obj_set_hidden(gsr_text_area, true);
         lv_obj_set_hidden(mic_chart, true);
         lv_obj_set_hidden(mic_text_area, true);
+        lv_obj_set_hidden(accel_chart, true);
+        lv_obj_set_hidden(accel_text_area, true);
         lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_hidden(start_btn, true);
         lv_obj_set_hidden(send_btn, true);
         lv_obj_set_hidden(mbox1, true);
         listCounter = 0;
-        listType = "";
         isBarTimerComplete = true;
         lv_obj_set_hidden(sensor_btnm, false);
     }
@@ -251,6 +296,7 @@ void mqtt_send(void *param)
     ESP_LOGI(TAG, "\n****************************************\n*  AWS client Id - %s  *\n****************************************\n\n",
              client_id);
 
+    mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
     if ((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
     {
 
@@ -262,7 +308,6 @@ void mqtt_send(void *param)
 
         static const char *btns[] = {"Continue", ""};
 
-        mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
         lv_obj_set_hidden(mbox1, false);
         lv_msgbox_set_text(mbox1, "Open the Park It! website to view the updated data");
         lv_msgbox_add_btns(mbox1, btns);
@@ -303,6 +348,18 @@ void getMicInput(void *parameter)
     mic_avg = mic_sum / counter;
     list[listCounter] = mic;
     listCounter++;
+}
+
+void getAccelInput(void *parameter)
+{
+    MPU6886_GetAccelData(&accelZero, &accelOne, &accelTwo);
+    accelList[listCounter] = accelZero;
+    listCounter++;
+    accelList[listCounter] = accelOne;
+    listCounter++;
+    accelList[listCounter] = accelTwo;
+    listCounter++;
+    counter++;
 }
 
 void barTimerHandler(void *param)
@@ -349,6 +406,23 @@ void barTimerHandler(void *param)
             }
             else
             {
+                getAccelInput(NULL);
+                if (counter <= 100)
+                {
+                    lv_bar_set_value(timer_bar, counter, LV_ANIM_ON);
+                }
+                else
+                {
+                    isBarTimerComplete = true;
+                    lv_obj_set_hidden(send_btn, false);
+                }
+                char accel_text[100];
+                sprintf(accel_text, "X: %.2f\nY: %.2f\nZ: %.2f\n", accelZero, accelOne, accelTwo);
+                lv_chart_set_next(accel_chart, accel_ser1, accelZero);
+                lv_chart_set_next(accel_chart, accel_ser2, accelOne);
+                lv_chart_set_next(accel_chart, accel_ser3, accelTwo);
+                lv_textarea_set_text(accel_text_area, accel_text);
+                vTaskDelay(10);
             }
         }
         else
@@ -359,6 +433,9 @@ void barTimerHandler(void *param)
             mic = 0;
             mic_avg = 0;
             mic_sum = 0;
+            accelZero = (float)0.0;
+            accelOne = (float)0.0;
+            accelTwo = (float)0.0;
             counter = 0;
         }
     }
@@ -372,6 +449,9 @@ void start_btn_event_handler(lv_obj_t *obj, lv_event_t event)
     mic = 0;
     mic_avg = 0;
     mic_sum = 0;
+    accelZero = (float)0.0;
+    accelOne = (float)0.0;
+    accelTwo = (float)0.0;
     counter = 0;
     listCounter = 0;
     isBarTimerComplete = false;
@@ -422,10 +502,19 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_hidden(mic_chart, true);
         mic_text_area = lv_textarea_create(lv_scr_act(), NULL);
         lv_obj_set_hidden(mic_text_area, true);
+        accel_chart = lv_chart_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(accel_chart, true);
+        accel_text_area = lv_textarea_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(accel_text_area, true);
         if (strcmp(txt, "GSR") == 0)
         {
             lv_obj_set_hidden(mic_chart, true);
             lv_obj_set_hidden(mic_text_area, true);
+            lv_obj_set_hidden(accel_chart, true);
+            lv_obj_set_hidden(accel_text_area, true);
+            lv_obj_set_hidden(start_btn, false);
+            lv_obj_set_hidden(timer_bar, false);
+
             listType = "GSR";
 
             lv_obj_set_hidden(gsr_text_area, false);
@@ -445,14 +534,13 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             gsr_ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
             lv_chart_refresh(gsr_chart);
-
-            lv_obj_set_hidden(start_btn, false);
-            lv_obj_set_hidden(timer_bar, false);
         }
         else if (strcmp(txt, "Mic") == 0)
         {
             lv_obj_set_hidden(gsr_chart, true);
             lv_obj_set_hidden(gsr_text_area, true);
+            lv_obj_set_hidden(accel_chart, true);
+            lv_obj_set_hidden(accel_text_area, true);
             lv_obj_set_hidden(start_btn, false);
             lv_obj_set_hidden(timer_bar, false);
 
@@ -476,8 +564,40 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
 
             lv_chart_refresh(mic_chart);
         }
+        else if (strcmp(txt, "Accel") == 0)
+        {
+            lv_obj_set_hidden(gsr_chart, true);
+            lv_obj_set_hidden(gsr_text_area, true);
+            lv_obj_set_hidden(mic_chart, true);
+            lv_obj_set_hidden(mic_text_area, true);
+            lv_obj_set_hidden(start_btn, false);
+            lv_obj_set_hidden(timer_bar, false);
+
+            listType = "Accel";
+
+            lv_obj_set_hidden(accel_text_area, false);
+            lv_obj_set_size(accel_text_area, 147, 100);
+            lv_obj_align(accel_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
+            lv_textarea_set_cursor_hidden(accel_text_area, true);
+            char accel_text[100];
+            sprintf(accel_text, "X: \nY: \nZ: \n");
+            lv_textarea_set_text(accel_text_area, accel_text);
+
+            lv_obj_set_hidden(accel_chart, false);
+            lv_obj_set_size(accel_chart, 300, 50);
+            lv_obj_align(accel_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
+            lv_chart_set_type(accel_chart, LV_CHART_TYPE_LINE);
+            lv_chart_set_range(accel_chart, -2, 2);
+
+            accel_ser1 = lv_chart_add_series(accel_chart, LV_COLOR_RED);
+            accel_ser2 = lv_chart_add_series(accel_chart, LV_COLOR_GREEN);
+            accel_ser3 = lv_chart_add_series(accel_chart, LV_COLOR_BLUE);
+
+            lv_chart_refresh(accel_chart);
+        }
         else
         {
+            printf("Type not detected\n");
         }
     }
 }
@@ -491,11 +611,13 @@ static void home_btn_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_obj_set_hidden(gsr_text_area, true);
         lv_obj_set_hidden(mic_chart, true);
         lv_obj_set_hidden(mic_text_area, true);
+        lv_obj_set_hidden(accel_chart, true);
+        lv_obj_set_hidden(accel_text_area, true);
         lv_obj_set_hidden(timer_bar, true);
         lv_obj_set_hidden(start_btn, true);
         lv_obj_set_hidden(send_btn, true);
         listCounter = 0;
-        listType = "";
+        
         isBarTimerComplete = true;
     }
 }
