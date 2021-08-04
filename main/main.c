@@ -330,6 +330,11 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
     {
         lv_obj_set_hidden(sensor_btnm, true);
         const char *txt = lv_btnmatrix_get_active_btn_text(obj);
+        timer_bar = lv_bar_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(timer_bar, false);
+        lv_obj_set_size(timer_bar, 147, 15);
+        lv_obj_align(timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
+        lv_bar_set_anim_time(timer_bar, 2000);
         if (strcmp(txt, "GSR") == 0)
         {
             listType = "GSR";
@@ -341,12 +346,6 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             char gsr_text[100];
             sprintf(gsr_text, "GSR:  \n--------------------\nMoving Average:  ");
             lv_textarea_set_text(gsr_text_area, gsr_text);
-
-            timer_bar = lv_bar_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(timer_bar, false);
-            lv_obj_set_size(timer_bar, 147, 15);
-            lv_obj_align(timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
-            lv_bar_set_anim_time(timer_bar, 2000);
 
             gsr_chart = lv_chart_create(lv_scr_act(), NULL);
             lv_obj_set_hidden(gsr_chart, false);
