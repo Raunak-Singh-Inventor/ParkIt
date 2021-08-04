@@ -40,7 +40,7 @@ lv_obj_t *gsr_chart;
 lv_obj_t *gsr_text_area;
 lv_obj_t *timer_bar;
 lv_obj_t *start_btn;
-lv_chart_series_t *ser1;
+lv_chart_series_t *gsr_ser1;
 lv_obj_t *home_btn;
 lv_obj_t *send_btn;
 lv_obj_t *mbox1;
@@ -293,7 +293,7 @@ void barTimerHandler(void *param)
                 }
                 char gsr_text[100];
                 sprintf(gsr_text, "GSR: %d\n--------------------\nMoving Average: %d", gsr, gsr_avg);
-                lv_chart_set_next(gsr_chart, ser1, gsr);
+                lv_chart_set_next(gsr_chart, gsr_ser1, gsr);
                 lv_textarea_set_text(gsr_text_area, gsr_text);
                 vTaskDelay(10);
             }
@@ -354,7 +354,7 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             lv_chart_set_type(gsr_chart, LV_CHART_TYPE_LINE);
             lv_chart_set_range(gsr_chart, 1000, 4095);
 
-            ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
+            gsr_ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
             lv_chart_refresh(gsr_chart);
 
