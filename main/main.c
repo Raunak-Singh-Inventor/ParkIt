@@ -383,7 +383,6 @@ static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
         lv_obj_set_hidden(gsr_timer_bar,true);
         lv_obj_set_hidden(start_btn,true);
         lv_obj_set_hidden(send_btn,true);
-        lv_obj_set_hidden(mbox1,true);
         listCounter = 0;
         listType = "";
         isBarTimerComplete = true;
