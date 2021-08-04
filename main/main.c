@@ -347,6 +347,20 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
         lv_style_set_outline_opa(&style_halo, LV_STATE_PRESSED, LV_OPA_TRANSP);
         lv_style_set_transition_prop_1(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_OPA);
         lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
+        start_btn = lv_btn_create(lv_scr_act(), NULL);
+        lv_obj_set_hidden(start_btn, false);
+        lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, 10);
+        lv_obj_set_size(start_btn, 140, 35);
+        lv_obj_add_style(start_btn, LV_BTN_PART_MAIN, &style_halo);
+        lv_obj_set_style_local_value_str(start_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Start");
+        lv_obj_set_event_cb(start_btn, start_btn_event_handler);
+        send_btn = lv_btn_create(lv_scr_act(), NULL);
+        lv_obj_align(send_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, -30);
+        lv_obj_add_style(send_btn, LV_BTN_PART_MAIN, &style_halo);
+        lv_obj_set_size(send_btn, 140, 35);
+        lv_obj_set_style_local_value_str(send_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Send");
+        lv_obj_set_event_cb(send_btn, send_btn_event_handler);
+        lv_obj_set_hidden(send_btn, true);
         if (strcmp(txt, "GSR") == 0)
         {
             listType = "GSR";
@@ -369,22 +383,6 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             gsr_ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
             lv_chart_refresh(gsr_chart);
-
-            start_btn = lv_btn_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(start_btn, false);
-            lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, 10);
-            lv_obj_set_size(start_btn, 140, 35);
-            lv_obj_add_style(start_btn, LV_BTN_PART_MAIN, &style_halo);
-            lv_obj_set_style_local_value_str(start_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Start");
-            lv_obj_set_event_cb(start_btn, start_btn_event_handler);
-
-            send_btn = lv_btn_create(lv_scr_act(), NULL);
-            lv_obj_align(send_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, -30);
-            lv_obj_add_style(send_btn, LV_BTN_PART_MAIN, &style_halo);
-            lv_obj_set_size(send_btn, 140, 35);
-            lv_obj_set_style_local_value_str(send_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Send");
-            lv_obj_set_event_cb(send_btn, send_btn_event_handler);
-            lv_obj_set_hidden(send_btn, true);
         }
         else if (strcmp(txt, "Mic") == 0)
         {
