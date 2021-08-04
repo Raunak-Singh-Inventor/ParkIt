@@ -86,13 +86,14 @@ void app_main()
 
     initialise_wifi();
     
-    xTaskCreate(
+    xTaskCreatePinnedToCore(
         barTimerHandler,
         "bar timer handler",
         4096*2,
         NULL,
         1,
-        &barTimerHandler_handle
+        &barTimerHandler_handle,
+        1
     );
 }
 
@@ -296,6 +297,17 @@ void barTimerHandler(void *param) {
     }
 }
 
+void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
+{
+    gsr = 0;
+    gsr_avg = 0;
+    gsr_sum = 0;
+    counter = 0;
+    listCounter = 0;
+    listType = "";
+    isBarTimerComplete = false;
+}
+
 static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 {
     if(event == LV_EVENT_VALUE_CHANGED) {
@@ -365,26 +377,17 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
 static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
 {
     if(event == LV_EVENT_CLICKED) {
+        lv_obj_set_hidden(sensor_btnm,false);
         lv_obj_set_hidden(gsr_chart,true);
         lv_obj_set_hidden(gsr_text_area,true);
         lv_obj_set_hidden(gsr_timer_bar,true);
         lv_obj_set_hidden(start_btn,true);
         lv_obj_set_hidden(send_btn,true);
+        lv_obj_set_hidden(mbox1,true);
         listCounter = 0;
         listType = "";
         isBarTimerComplete = true;
-        lv_obj_set_hidden(sensor_btnm,false);
     }
-}
-
-void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
-{
-    gsr = 0;
-    gsr_avg = 0;
-    gsr_sum = 0;
-    counter = 0;
-    listCounter = 0;
-    isBarTimerComplete = false;
 }
 
 static void send_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
