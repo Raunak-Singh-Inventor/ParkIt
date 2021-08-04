@@ -28,24 +28,24 @@ static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt);
 void mqtt_send(void *param);
 void getGsrInput(void *parameter);
 void barTimerHandler(void *param);
-void start_btn_event_handler(lv_obj_t * obj, lv_event_t event);
-static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event);
-static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event);
-static void send_btn_event_handler(lv_obj_t * obj, lv_event_t event);
+void start_btn_event_handler(lv_obj_t *obj, lv_event_t event);
+static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event);
+static void home_btn_event_handler(lv_obj_t *obj, lv_event_t event);
+static void send_btn_event_handler(lv_obj_t *obj, lv_event_t event);
 
 TaskHandle_t barTimerHandler_handle;
 
-lv_obj_t * sensor_btnm;
-lv_obj_t * gsr_chart;
+lv_obj_t *sensor_btnm;
+lv_obj_t *gsr_chart;
 lv_obj_t *gsr_text_area;
-lv_obj_t * gsr_timer_bar;
-lv_obj_t * start_btn;
-lv_chart_series_t * ser1;
-lv_obj_t * home_btn;
-lv_obj_t * send_btn;
-lv_obj_t * mbox1;
+lv_obj_t *gsr_timer_bar;
+lv_obj_t *start_btn;
+lv_chart_series_t *ser1;
+lv_obj_t *home_btn;
+lv_obj_t *send_btn;
+lv_obj_t *mbox1;
 
-bool isBarTimerComplete=true;
+bool isBarTimerComplete = true;
 
 int gsr = 0;
 int gsr_avg = 0;
@@ -77,7 +77,7 @@ void app_main()
     lv_obj_set_style_local_value_str(home_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
     lv_obj_set_event_cb(home_btn, home_btn_event_handler);
 
-    static const char * sensor_btnm_map[] = {"GSR", "Mic", "Accel",""};
+    static const char *sensor_btnm_map[] = {"GSR", "Mic", "Accel", ""};
 
     sensor_btnm = lv_btnmatrix_create(lv_scr_act(), NULL);
     lv_btnmatrix_set_map(sensor_btnm, sensor_btnm_map);
@@ -85,16 +85,15 @@ void app_main()
     lv_obj_set_event_cb(sensor_btnm, sensor_btnm_event_handler);
 
     initialise_wifi();
-    
+
     xTaskCreatePinnedToCore(
         barTimerHandler,
         "bar timer handler",
-        4096*2,
+        4096 * 2,
         NULL,
         1,
         &barTimerHandler_handle,
-        1
-    );
+        1);
 }
 
 void disconnect_callback_handler(AWS_IoT_Client *pClient, void *data)
@@ -134,8 +133,9 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *)cPayload;
     paramsQOS1.isRetained = 0;
-    for(int i = 0; i < 101; i++) {
-        sprintf(cPayload, "{\"value\":%d,\"type\":\"%s\"}",list[i],listType);
+    for (int i = 0; i < 101; i++)
+    {
+        sprintf(cPayload, "{\"value\":%d,\"type\":\"%s\"}", list[i], listType);
         paramsQOS1.payloadLen = strlen(cPayload);
         IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
         if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -148,17 +148,18 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
 
 static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
 {
-    if(evt==LV_EVENT_VALUE_CHANGED) {
-        lv_obj_set_hidden(gsr_chart,true);
-        lv_obj_set_hidden(gsr_text_area,true);
-        lv_obj_set_hidden(gsr_timer_bar,true);
-        lv_obj_set_hidden(start_btn,true);
-        lv_obj_set_hidden(send_btn,true);
-        lv_obj_set_hidden(mbox1,true);
+    if (evt == LV_EVENT_VALUE_CHANGED)
+    {
+        lv_obj_set_hidden(gsr_chart, true);
+        lv_obj_set_hidden(gsr_text_area, true);
+        lv_obj_set_hidden(gsr_timer_bar, true);
+        lv_obj_set_hidden(start_btn, true);
+        lv_obj_set_hidden(send_btn, true);
+        lv_obj_set_hidden(mbox1, true);
         listCounter = 0;
         listType = "";
         isBarTimerComplete = true;
-        lv_obj_set_hidden(sensor_btnm,false);
+        lv_obj_set_hidden(sensor_btnm, false);
     }
 }
 
@@ -172,16 +173,16 @@ void mqtt_send(void *param)
 
     ESP_LOGI(TAG, "AWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
-    mqttInitParams.enableAutoReconnect = false; 
+    mqttInitParams.enableAutoReconnect = false;
     mqttInitParams.pHostURL = HostAddress;
     mqttInitParams.port = port;
     mqttInitParams.pRootCALocation = (const char *)aws_root_ca_pem_start;
     mqttInitParams.pDeviceCertLocation = "#";
     mqttInitParams.pDevicePrivateKeyLocation = "#0";
 
-    #define CLIENT_ID_LEN (ATCA_SERIAL_NUM_SIZE * 2)
-    #define SUBSCRIBE_TOPIC_LEN (CLIENT_ID_LEN + 3)
-    #define BASE_PUBLISH_TOPIC_LEN (CLIENT_ID_LEN + 2)
+#define CLIENT_ID_LEN (ATCA_SERIAL_NUM_SIZE * 2)
+#define SUBSCRIBE_TOPIC_LEN (CLIENT_ID_LEN + 3)
+#define BASE_PUBLISH_TOPIC_LEN (CLIENT_ID_LEN + 2)
 
     client_id = malloc(CLIENT_ID_LEN + 1);
     ATCA_STATUS ret = Atecc608_GetSerialString(client_id);
@@ -240,7 +241,7 @@ void mqtt_send(void *param)
     ESP_LOGI(TAG, "\n****************************************\n*  AWS client Id - %s  *\n****************************************\n\n",
              client_id);
 
-    if((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
+    if ((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
     {
 
         rc = aws_iot_mqtt_yield(&client, 100);
@@ -249,46 +250,62 @@ void mqtt_send(void *param)
 
         publisher(&client, base_publish_topic, BASE_PUBLISH_TOPIC_LEN);
 
-        static const char * btns[] ={"Continue", ""};
+        static const char *btns[] = {"Continue", ""};
 
         mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
-        lv_obj_set_hidden(mbox1,false);
+        lv_obj_set_hidden(mbox1, false);
         lv_msgbox_set_text(mbox1, "Done!");
         lv_msgbox_add_btns(mbox1, btns);
         lv_obj_set_width(mbox1, 200);
         lv_obj_set_event_cb(mbox1, mbox_event_cb);
-        lv_obj_align(mbox1, NULL, LV_ALIGN_CENTER, 0, 0); 
+        lv_obj_align(mbox1, NULL, LV_ALIGN_CENTER, 0, 0);
     }
 }
 
 void getGsrInput(void *parameter)
 {
-    listType = "GSR";
-    Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC); 
+    Core2ForAWS_Port_PinMode(PORT_B_ADC_PIN, ADC);
     gsr = Core2ForAWS_Port_B_ADC_ReadRaw();
-    gsr_sum+=gsr;
+    gsr_sum += gsr;
     counter++;
-    gsr_avg = gsr_sum/counter;
+    gsr_avg = gsr_sum / counter;
     list[listCounter] = gsr;
     listCounter++;
 }
 
-void barTimerHandler(void *param) {
-    while(true){
-        if(isBarTimerComplete==false) {
-            getGsrInput(NULL);
-            if(counter<=100) {
-                lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
-            } else {
-                isBarTimerComplete = true;
-                lv_obj_set_hidden(send_btn,false);
+void barTimerHandler(void *param)
+{
+    while (true)
+    {
+        if (isBarTimerComplete == false)
+        {
+            if (strcmp(listType, "GSR") == 0)
+            {
+                getGsrInput(NULL);
+                if (counter <= 100)
+                {
+                    lv_bar_set_value(gsr_timer_bar, counter, LV_ANIM_ON);
+                }
+                else
+                {
+                    isBarTimerComplete = true;
+                    lv_obj_set_hidden(send_btn, false);
+                }
+                char gsr_text[100];
+                sprintf(gsr_text, "GSR: %d\n--------------------\nMoving Average: %d", gsr, gsr_avg);
+                lv_chart_set_next(gsr_chart, ser1, gsr);
+                lv_textarea_set_text(gsr_text_area, gsr_text);
+                vTaskDelay(10);
             }
-            char gsr_text[100];
-            sprintf(gsr_text,"GSR: %d\n--------------------\nMoving Average: %d",gsr,gsr_avg);
-            lv_chart_set_next(gsr_chart, ser1, gsr);
-            lv_textarea_set_text(gsr_text_area,gsr_text);
-            vTaskDelay(10);
-        } else {
+            else if (strcmp(listType, "Mic") == 0)
+            {
+            }
+            else
+            {
+            }
+        }
+        else
+        {
             gsr = 0;
             gsr_avg = 0;
             gsr_sum = 0;
@@ -297,44 +314,46 @@ void barTimerHandler(void *param) {
     }
 }
 
-void start_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
+void start_btn_event_handler(lv_obj_t *obj, lv_event_t event)
 {
     gsr = 0;
     gsr_avg = 0;
     gsr_sum = 0;
     counter = 0;
     listCounter = 0;
-    listType = "";
     isBarTimerComplete = false;
 }
 
-static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
+static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
 {
-    if(event == LV_EVENT_VALUE_CHANGED) {
-        lv_obj_set_hidden(sensor_btnm,true);
-        const char * txt = lv_btnmatrix_get_active_btn_text(obj);
-        if(strcmp(txt,"GSR")==0) {
+    if (event == LV_EVENT_VALUE_CHANGED)
+    {
+        lv_obj_set_hidden(sensor_btnm, true);
+        const char *txt = lv_btnmatrix_get_active_btn_text(obj);
+        if (strcmp(txt, "GSR") == 0)
+        {
+            listType = "GSR";
             gsr_text_area = lv_textarea_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(gsr_text_area,false);
+            lv_obj_set_hidden(gsr_text_area, false);
             lv_obj_set_size(gsr_text_area, 147, 100);
             lv_obj_align(gsr_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
             lv_textarea_set_cursor_hidden(gsr_text_area, true);
             char gsr_text[100];
-            sprintf(gsr_text,"GSR:  \n--------------------\nMoving Average:  ");
-            lv_textarea_set_text(gsr_text_area,gsr_text);   
+            sprintf(gsr_text, "GSR:  \n--------------------\nMoving Average:  ");
+            lv_textarea_set_text(gsr_text_area, gsr_text);
 
             gsr_timer_bar = lv_bar_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(gsr_timer_bar,false);
+            lv_obj_set_hidden(gsr_timer_bar, false);
             lv_obj_set_size(gsr_timer_bar, 147, 15);
             lv_obj_align(gsr_timer_bar, NULL, LV_ALIGN_IN_RIGHT_MID, -10, 40);
             lv_bar_set_anim_time(gsr_timer_bar, 2000);
 
             gsr_chart = lv_chart_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(gsr_chart,false);
+            lv_obj_set_hidden(gsr_chart, false);
             lv_obj_set_size(gsr_chart, 300, 50);
             lv_obj_align(gsr_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
-            lv_chart_set_type(gsr_chart, LV_CHART_TYPE_LINE); 
-            lv_chart_set_range(gsr_chart,1000,4095);
+            lv_chart_set_type(gsr_chart, LV_CHART_TYPE_LINE);
+            lv_chart_set_range(gsr_chart, 1000, 4095);
 
             ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
@@ -354,44 +373,50 @@ static void sensor_btnm_event_handler(lv_obj_t * obj, lv_event_t event)
             lv_style_set_transition_prop_2(&style_halo, LV_STATE_DEFAULT, LV_STYLE_OUTLINE_WIDTH);
 
             start_btn = lv_btn_create(lv_scr_act(), NULL);
-            lv_obj_set_hidden(start_btn,false);
-            lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25,10);
-            lv_obj_set_size(start_btn,140,35);
+            lv_obj_set_hidden(start_btn, false);
+            lv_obj_align(start_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, 10);
+            lv_obj_set_size(start_btn, 140, 35);
             lv_obj_add_style(start_btn, LV_BTN_PART_MAIN, &style_halo);
             lv_obj_set_style_local_value_str(start_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Start");
-            lv_obj_set_event_cb(start_btn,start_btn_event_handler);
+            lv_obj_set_event_cb(start_btn, start_btn_event_handler);
 
             send_btn = lv_btn_create(lv_scr_act(), NULL);
             lv_obj_align(send_btn, NULL, LV_ALIGN_IN_RIGHT_MID, -25, -30);
             lv_obj_add_style(send_btn, LV_BTN_PART_MAIN, &style_halo);
-            lv_obj_set_size(send_btn,140,35);
+            lv_obj_set_size(send_btn, 140, 35);
             lv_obj_set_style_local_value_str(send_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Send");
-            lv_obj_set_event_cb(send_btn,send_btn_event_handler);
-            lv_obj_set_hidden(send_btn,true);
-        } else if(strcmp(txt,"Mic")==0) {
-        } else {
+            lv_obj_set_event_cb(send_btn, send_btn_event_handler);
+            lv_obj_set_hidden(send_btn, true);
+        }
+        else if (strcmp(txt, "Mic") == 0)
+        {
+        }
+        else
+        {
         }
     }
 }
 
-static void home_btn_event_handler(lv_obj_t * obj, lv_event_t event)
+static void home_btn_event_handler(lv_obj_t *obj, lv_event_t event)
 {
-    if(event == LV_EVENT_CLICKED) {
-        lv_obj_set_hidden(sensor_btnm,false);
-        lv_obj_set_hidden(gsr_chart,true);
-        lv_obj_set_hidden(gsr_text_area,true);
-        lv_obj_set_hidden(gsr_timer_bar,true);
-        lv_obj_set_hidden(start_btn,true);
-        lv_obj_set_hidden(send_btn,true);
+    if (event == LV_EVENT_CLICKED)
+    {
+        lv_obj_set_hidden(sensor_btnm, false);
+        lv_obj_set_hidden(gsr_chart, true);
+        lv_obj_set_hidden(gsr_text_area, true);
+        lv_obj_set_hidden(gsr_timer_bar, true);
+        lv_obj_set_hidden(start_btn, true);
+        lv_obj_set_hidden(send_btn, true);
         listCounter = 0;
         listType = "";
         isBarTimerComplete = true;
     }
 }
 
-static void send_btn_event_handler(lv_obj_t * obj, lv_event_t event) 
+static void send_btn_event_handler(lv_obj_t *obj, lv_event_t event)
 {
-    if(event == LV_EVENT_CLICKED) {
+    if (event == LV_EVENT_CLICKED)
+    {
         mqtt_send(NULL);
     }
 }
