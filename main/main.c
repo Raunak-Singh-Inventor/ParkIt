@@ -215,6 +215,7 @@ static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
         listCounter = 0;
         isBarTimerComplete = true;
         lv_obj_set_hidden(sensor_btnm, false);
+        Core2ForAWS_Motor_SetStrength(0);
     }
 }
 
@@ -308,6 +309,7 @@ void mqtt_send(void *param)
 
         static const char *btns[] = {"Continue", ""};
 
+        Core2ForAWS_Motor_SetStrength(100);
         lv_obj_set_hidden(mbox1, false);
         lv_msgbox_set_text(mbox1, "Open the Park It! website to view the updated data");
         lv_msgbox_add_btns(mbox1, btns);
