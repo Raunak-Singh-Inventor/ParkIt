@@ -95,7 +95,7 @@ void app_main()
     lv_obj_set_style_local_value_str(home_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
     lv_obj_set_event_cb(home_btn, home_btn_event_handler);
 
-    static const char *sensor_btnm_map[] = {"GSR", "Mic", "Accel", ""};
+    static const char *sensor_btnm_map[] = {"GSR", "Mic", "Gyro", ""};
 
     sensor_btnm = lv_btnmatrix_create(lv_scr_act(), NULL);
     lv_btnmatrix_set_map(sensor_btnm, sensor_btnm_map);
@@ -169,7 +169,7 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     {
         for (int i = 0; i < 303; i++)
         {
-            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i], "X");
+            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i], "Roll");
             paramsQOS1.payloadLen = strlen(cPayload);
             IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -177,7 +177,7 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
                 ESP_LOGW(TAG, "QOS1 publish not received.");
                 rc = SUCCESS;
             }
-            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i + 1], "Y");
+            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i + 1], "Yaw");
             paramsQOS1.payloadLen = strlen(cPayload);
             rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -185,7 +185,7 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
                 ESP_LOGW(TAG, "QOS1 publish not received.");
                 rc = SUCCESS;
             }
-            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i + 2], "Z");
+            sprintf(cPayload, "{\"value\":%.2f,\"type\":\"%s\"}", accelList[i + 2], "Pitch");
             paramsQOS1.payloadLen = strlen(cPayload);
             rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -352,7 +352,7 @@ void getMicInput(void *parameter)
 
 void getAccelInput(void *parameter)
 {
-    MPU6886_GetAccelData(&accelZero, &accelOne, &accelTwo);
+    MPU6886_GetGyroData(&accelZero, &accelOne, &accelTwo);
     accelList[listCounter] = accelZero;
     listCounter++;
     accelList[listCounter] = accelOne;
@@ -417,7 +417,7 @@ void barTimerHandler(void *param)
                     lv_obj_set_hidden(send_btn, false);
                 }
                 char accel_text[100];
-                sprintf(accel_text, "X: %.2f\nY: %.2f\nZ: %.2f\n", accelZero, accelOne, accelTwo);
+                sprintf(accel_text, "Roll: %.2f\nYaw: %.2f\nPitch: %.2f\n", accelZero, accelOne, accelTwo);
                 lv_chart_set_next(accel_chart, accel_ser1, accelZero);
                 lv_chart_set_next(accel_chart, accel_ser2, accelOne);
                 lv_chart_set_next(accel_chart, accel_ser3, accelTwo);
@@ -564,7 +564,7 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
 
             lv_chart_refresh(mic_chart);
         }
-        else if (strcmp(txt, "Accel") == 0)
+        else if (strcmp(txt, "Gyro") == 0)
         {
             lv_obj_set_hidden(gsr_chart, true);
             lv_obj_set_hidden(gsr_text_area, true);
@@ -580,14 +580,14 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             lv_obj_align(accel_text_area, NULL, LV_ALIGN_IN_LEFT_MID, 10, 0);
             lv_textarea_set_cursor_hidden(accel_text_area, true);
             char accel_text[100];
-            sprintf(accel_text, "X: \nY: \nZ: \n");
+            sprintf(accel_text, "Roll: \nYaw: \nPitch: \n");
             lv_textarea_set_text(accel_text_area, accel_text);
 
             lv_obj_set_hidden(accel_chart, false);
             lv_obj_set_size(accel_chart, 300, 50);
             lv_obj_align(accel_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
             lv_chart_set_type(accel_chart, LV_CHART_TYPE_LINE);
-            lv_chart_set_range(accel_chart, -2, 2);
+            lv_chart_set_range(accel_chart, -200, 200);
 
             accel_ser1 = lv_chart_add_series(accel_chart, LV_COLOR_RED);
             accel_ser2 = lv_chart_add_series(accel_chart, LV_COLOR_GREEN);
