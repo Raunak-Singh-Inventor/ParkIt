@@ -69,7 +69,7 @@ float pitch = 0;
 
 int counter = 0;
 
-int list[330];
+int list[110];
 float gyroList[330];
 char *listType;
 int listCounter = 0;
@@ -154,7 +154,7 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     paramsQOS1.isRetained = 0;
     if (strcmp(listType, "Gyro") != 0)
     {
-        for (int i = 0; i < 303; i++)
+        for (int i = 0; i < 101; i++)
         {
             char sid[5];
             itoa(id, sid, 10);
