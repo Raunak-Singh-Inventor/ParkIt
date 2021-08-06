@@ -211,13 +211,14 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
 
     static const char *btns[] = {"Continue", ""};
 
-    lv_obj_set_hidden(mbox1, false);
+    mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
     lv_msgbox_set_text(mbox1, "Open the Park It! website to view the updated data");
     lv_msgbox_add_btns(mbox1, btns);
     lv_obj_set_width(mbox1, 200);
     lv_obj_set_event_cb(mbox1, mbox_event_cb);
     lv_obj_align(mbox1, NULL, LV_ALIGN_CENTER, 0, 0);
-    Core2ForAWS_Motor_SetStrength(80);
+    Core2ForAWS_Motor_SetStrength(50);
+    lv_obj_set_hidden(mbox1, false);
 }
 
 static void mbox_event_cb(lv_obj_t *obj, lv_event_t evt)
@@ -319,7 +320,6 @@ void mqtt_send(void *param)
     ESP_LOGI(TAG, "\n****************************************\n*  AWS client Id - %s  *\n****************************************\n\n",
              client_id);
 
-    mbox1 = lv_msgbox_create(lv_scr_act(), NULL);
     if ((NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc))
     {
 
