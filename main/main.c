@@ -151,13 +151,14 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *)cPayload;
     paramsQOS1.isRetained = 0;
+    int id = 1;
     rtc_date_t date;
     BM8563_GetTime(&date);
     if (strcmp(listType, "Gyro") != 0)
     {
         for (int i = 0; i < 101; i++)
         {
-            sprintf(cPayload, "{\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", list[i], listType, client_id, date.hour, date.minute, date.second);
+            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, list[i], listType, client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -165,13 +166,14 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
                 ESP_LOGW(TAG, "QOS1 publish not received.");
                 rc = SUCCESS;
             }
+            id++;
         }
     }
     else
     {
         for (int i = 0; i < 303; i++)
         {
-            sprintf(cPayload, "{\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", (int)gyroList[i], "Roll", client_id, date.hour, date.minute, date.second);
+            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, (int)gyroList[i], "Roll", client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -179,8 +181,9 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
                 ESP_LOGW(TAG, "QOS1 publish not received.");
                 rc = SUCCESS;
             }
+            id++;
             i++;
-            sprintf(cPayload, "{\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", (int)gyroList[i], "Yaw", client_id, date.hour, date.minute, date.second);
+            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, (int)gyroList[i], "Yaw", client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -188,8 +191,9 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
                 ESP_LOGW(TAG, "QOS1 publish not received.");
                 rc = SUCCESS;
             }
+            id++;
             i++;
-            sprintf(cPayload, "{\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", (int)gyroList[i], "Pitch", client_id, date.hour, date.minute, date.second);
+            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, (int)gyroList[i], "Pitch", client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -197,6 +201,7 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
                 ESP_LOGW(TAG, "QOS1 publish not received.");
                 rc = SUCCESS;
             }
+            id++;
         }
     }
 
