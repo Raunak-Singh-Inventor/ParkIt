@@ -143,6 +143,7 @@ void disconnect_callback_handler(AWS_IoT_Client *pClient, void *data)
     }
 }
 
+int id = 1;
 static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_topic_len)
 {
     char cPayload[200];
@@ -151,7 +152,6 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     paramsQOS1.qos = QOS1;
     paramsQOS1.payload = (void *)cPayload;
     paramsQOS1.isRetained = 0;
-    int id = 1;
     if (strcmp(listType, "Gyro") != 0)
     {
         for (int i = 0; i < 303; i++)
