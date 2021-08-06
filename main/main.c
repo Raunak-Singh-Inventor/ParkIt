@@ -69,7 +69,7 @@ float pitch = 0;
 
 int counter = 0;
 
-int list[110];
+int list[330];
 float gyroList[330];
 char *listType;
 int listCounter = 0;
@@ -156,9 +156,11 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     BM8563_GetTime(&date);
     if (strcmp(listType, "Gyro") != 0)
     {
-        for (int i = 0; i < 101; i++)
+        for (int i = 0; i < 303; i++)
         {
-            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, list[i], listType, client_id, date.hour, date.minute, date.second);
+            char sid[5];
+            itoa(id, sid, 10);
+            sprintf(cPayload, "{\"id\":\"%s\",\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", sid, list[i], listType, client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -173,7 +175,9 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
     {
         for (int i = 0; i < 303; i++)
         {
-            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, (int)gyroList[i], "Roll", client_id, date.hour, date.minute, date.second);
+            char sid[5];
+            itoa(id, sid, 10);
+            sprintf(cPayload, "{\"id\":\"%s\",\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", sid, (int)gyroList[i], "Roll", client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             IoT_Error_t rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -183,7 +187,8 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
             }
             id++;
             i++;
-            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, (int)gyroList[i], "Yaw", client_id, date.hour, date.minute, date.second);
+            itoa(id, sid, 10);
+            sprintf(cPayload, "{\"id\":\"%s\",\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", sid, (int)gyroList[i], "Yaw", client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
@@ -193,7 +198,8 @@ static void publisher(AWS_IoT_Client *client, char *base_topic, uint16_t base_to
             }
             id++;
             i++;
-            sprintf(cPayload, "{\"id\":%d,\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", id, (int)gyroList[i], "Pitch", client_id, date.hour, date.minute, date.second);
+            itoa(id, sid, 10);
+            sprintf(cPayload, "{\"id\":\"%s\",\"measurementValue\":%d,\"measurementType\":\"%s\",\"clientID\":\"%s\",\"measurementHour\":%02d,\"measurementMinute\":%02d,\"measurementSecond\":%02d}", sid, (int)gyroList[i], "Pitch", client_id, date.hour, date.minute, date.second);
             paramsQOS1.payloadLen = strlen(cPayload);
             rc = aws_iot_mqtt_publish(client, base_topic, base_topic_len, &paramsQOS1);
             if (rc == MQTT_REQUEST_TIMEOUT_ERROR)
