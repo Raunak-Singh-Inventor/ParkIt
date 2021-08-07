@@ -90,6 +90,13 @@ void app_main()
     Core2ForAWS_Init();
     Core2ForAWS_Display_SetBrightness(80);
 
+    Core2ForAWS_Display_SetBrightness(80);
+
+    Core2ForAWS_Sk6812_SetSideColor(SK6812_SIDE_LEFT, 0xFF0000);
+    Core2ForAWS_Sk6812_SetSideColor(SK6812_SIDE_RIGHT, 0xFF0000);
+
+    Core2ForAWS_Sk6812_Show();
+
     home_btn = lv_btn_create(lv_scr_act(), NULL);
     lv_obj_align(home_btn, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
     lv_obj_set_style_local_value_str(home_btn, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, "Park It!");
