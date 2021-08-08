@@ -61,9 +61,11 @@ ATCA_STATUS Atecc608_GetSerialString(char * sn) {
     ret = atcab_read_serial_number(serial);
     i2c_free_port(ATECC608_I2C_PORT);
     
-    if (ret != ATCA_SUCCESS) {
+    while (ret != ATCA_SUCCESS) {
         ESP_LOGI(TAG, "*FAILED* atcab_read_serial_number returned %02x", ret);
-        handleErr();
+        i2c_take_port(ATECC608_I2C_PORT, portMAX_DELAY);    
+        ret = atcab_read_serial_number(serial);
+        i2c_free_port(ATECC608_I2C_PORT);
     }
 
     for (size_t i = 0; i < ATCA_SERIAL_NUM_SIZE; i++)
