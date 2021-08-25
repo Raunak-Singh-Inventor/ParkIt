@@ -550,7 +550,7 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             lv_obj_set_size(gsr_chart, 300, 50);
             lv_obj_align(gsr_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
             lv_chart_set_type(gsr_chart, LV_CHART_TYPE_LINE);
-            lv_chart_set_range(gsr_chart, 1000, 4095);
+            lv_chart_set_range(gsr_chart, 0, 2000);
 
             gsr_ser1 = lv_chart_add_series(gsr_chart, LV_COLOR_RED);
 
