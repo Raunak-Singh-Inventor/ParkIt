@@ -579,7 +579,7 @@ static void sensor_btnm_event_handler(lv_obj_t *obj, lv_event_t event)
             lv_obj_set_size(mic_chart, 300, 50);
             lv_obj_align(mic_chart, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
             lv_chart_set_type(mic_chart, LV_CHART_TYPE_LINE);
-            lv_chart_set_range(mic_chart, -100, 0);
+            lv_chart_set_range(mic_chart, -35, 0);
 
             mic_ser1 = lv_chart_add_series(mic_chart, LV_COLOR_RED);
 
